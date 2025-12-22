@@ -31,7 +31,7 @@ This repository contains a **Dental Appointment Booking System** developed for a
 
 ---
 
-## How to run this system locally
+## How to run this system locally 🖥️
 
 1. Install and open XAMPP.
 
