@@ -1,4 +1,4 @@
-# Dental Appointment Booking System
+# Dental Appointment Booking System 🦷📅
 
 This repository contains a **Dental Appointment Booking System** developed for academic purpose. The system aims to improve appointment scheduling efficiency for dental clinics by replacing manual booking processes with an online system.
 
@@ -28,6 +28,37 @@ This repository contains a **Dental Appointment Booking System** developed for a
 - Allow patients to book appointments online at any time
 - Prevent scheduling conflicts and booking errors
 - Improve overall clinic efficiency and patient experience
+
+---
+
+## How to run this system locally
+
+1. Install and open XAMPP.
+
+2. Start the Apache and MySQL services.
+
+3. Open phpMyAdmin at:
+
+```
+http://localhost/phpmyadmin
+```
+
+4. Create the database by executing the SQL script:
+- Open the SQL tab in phpMyAdmin
+- Paste and run the contents of schema.sql
+
+5. Copy the project folder into:
+
+```
+C:\xampp\htdocs\{project_folder}
+```
+
+6. Open the system in your browser:
+```
+http://localhost/{project_folder}/index.php
+```
+
+7. The system is now ready for testing.
 
 ---
 
