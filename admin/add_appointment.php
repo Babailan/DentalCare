@@ -1,0 +1,130 @@
+<?php
+session_start();
+include '../public/config.php';
+include '../public/header.php';
+
+// Ensure only admin can access this page
+if (!isset($_SESSION['admin'])) {
+    header('Location: ../public/login.php');
+    exit;
+}
+
+$message = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle form submission
+    $patient_name = $_POST['patient_name'];
+    $mobile_no = $_POST['mobile_no'];
+    $service = $_POST['service'];
+    $date = $_POST['date'];
+    $time = $_POST['time'];
+
+    // Find the patient ID based on the provided name and mobile number
+    $query = "SELECT PatientID FROM Patients WHERE Name = '$patient_name' AND MobileNo = '$mobile_no'";
+    $result = mysqli_query($conn, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $patient_id = $row['PatientID'];
+    } else {
+        // Insert new patient if not found
+        $insert_patient_query = "INSERT INTO Patients (Name, MobileNo) VALUES ('$patient_name', '$mobile_no')";
+        if (mysqli_query($conn, $insert_patient_query)) {
+            $patient_id = mysqli_insert_id($conn);
+        } else {
+            $message = "Error inserting new patient: " . mysqli_error($conn);
+        }
+    }
+
+    if (isset($patient_id)) {
+        // Find the SlotID based on Date and Time
+        $slot_query = "SELECT SlotID FROM Slots WHERE Date = '$date' AND Time = '$time'";
+        $slot_result = mysqli_query($conn, $slot_query);
+
+        if (mysqli_num_rows($slot_result) > 0) {
+            $slot_row = mysqli_fetch_assoc($slot_result);
+            $slot_id = $slot_row['SlotID'];
+
+            // Insert the appointment
+            $insert_appointment_query = "INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES ($patient_id, '$date', '$time', '$service', 'Pending', $slot_id)";
+            if (mysqli_query($conn, $insert_appointment_query)) {
+                $message = "Appointment added successfully";
+            } else {
+                $message = "Error: " . mysqli_error($conn);
+            }
+        } else {
+            $message = "Slot not found. Please check the date and time.";
+        }
+    }
+} else {
+    // Retrieve date, time, and service from query parameters for GET request
+    $date = $_GET['date'];
+    $time = $_GET['time'];
+    $service = isset($_GET['service']) ? $_GET['service'] : '';
+}
+?>
+
+<h2>Add Appointment</h2>
+
+<form id="appointmentForm" action="add_appointment.php" method="post">
+    <label for="patient_name">Patient Name:</label>
+    <input type="text" id="patient_name" name="patient_name" required>
+    <br>
+    <label for="mobile_no">Mobile No:</label>
+    <input type="text" id="mobile_no" name="mobile_no" required>
+    <br>
+    <label for="service">Service Type:</label>
+    <input type="text" id="service" name="service" value="<?php echo htmlspecialchars($service); ?>" required>
+    <br>
+    <label for="date">Date:</label>
+    <input type="text" id="date" name="date" value="<?php echo htmlspecialchars($date); ?>" readonly>
+    <br>
+    <label for="time">Time:</label>
+    <input type="text" id="time" name="time" value="<?php echo htmlspecialchars($time); ?>" readonly>
+    <br>
+    <input type="submit" value="Add">
+</form>
+
+<div class="back">
+    <button onclick="window.location.href='admin_slots.php';">Back</button>
+</div>
+
+<?php include '../public/footer.php'; ?>
+
+<?php if (!empty($message)): ?>
+<script>
+    window.onload = function() {
+        alert("<?php echo $message; ?>");
+    };
+</script>
+<?php endif; ?>
+
+<script>
+document.getElementById('appointmentForm').addEventListener('submit', function(event) {
+    const patientName = document.getElementById('patient_name').value.trim();
+    const mobileNo = document.getElementById('mobile_no').value.trim();
+    const service = document.getElementById('service').value.trim();
+
+    // Validate patient name
+    if (patientName === '') {
+        alert('Please enter the patient name.');
+        event.preventDefault();
+        return;
+    }
+
+    // Validate mobile number
+    const mobileNoPattern = /^[0-9]{10,12}$/; // Assuming a valid mobile number is 10-12 digits
+    if (!mobileNoPattern.test(mobileNo)) {
+        alert('Please enter a valid mobile number.');
+        event.preventDefault();
+        return;
+    }
+
+    // Validate service type
+    if (service === '') {
+        alert('Please enter the service type.');
+        event.preventDefault();
+        return;
+    }
+});
+</script>
