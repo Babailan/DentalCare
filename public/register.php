@@ -1,50 +1,79 @@
 <?php include 'header.php'; ?>
 
-<h2>Register</h2>
-<?php if (isset($_GET['error'])): ?>
-    <script>
-        window.onload = function() {
-            alert("<?php echo htmlspecialchars($_GET['error']); ?>");
-        };
-    </script>
-<?php endif; ?>
-
-<form id="registrationForm" action="register_action.php" method="post">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" placeholder="Full Name" required>
-      
-    <label for="ic">IC:</label>
-    <input type="text" id="ic" name="ic" placeholder="030204012084" required>
-      
-    <label for="sex">Sex:</label>
-    <select id="sex" name="sex" required>
-        <option value="Male" selected>Male</option>
-        <option value="Female">Female</option>
-    </select>
-      
-    <label for="address">Address:</label>
-    <input type="text" id="address" name="address" placeholder="Your Address" required>
-      
-    <label for="age">Age:</label>
-    <input type="number" id="age" name="age" placeholder="Age" required>
-      
-    <label for="mobile_no">Mobile No:</label>
-    <input type="text" id="mobile_no" name="mobile_no" placeholder="0123456789" required>
-      
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" placeholder="email@example.com" required>
-      
-    <label for="username">Username:</label>
-    <input type="text" id="username" name="username" placeholder="username" required>
-      
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" placeholder="password" required>
-      
-    <label for="confirm_password">Confirm Password:</label>
-    <input type="password" id="confirm_password" name="confirm_password" placeholder="confirm password" required>
-      
-    <input type="submit" value="Register">
-</form>
+<div class="card card-bordered w-full max-w-2xl bg-base-100 shadow-xl">
+    <div class="card-body">
+        <h2 class="card-title justify-center text-2xl mb-4">Register</h2>
+        
+        <?php if (isset($_GET['error'])): ?>
+            <div class="alert alert-error mb-4">
+                <span><?php echo htmlspecialchars($_GET['error']); ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <form id="registrationForm" action="register_action.php" method="post" class="flex flex-col gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="floating-label">
+                    <input type="text" id="name" name="name" placeholder="Full Name" class="input input-bordered w-full" required />
+                    <span>Name</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="text" id="ic" name="ic" placeholder="030204012084" class="input input-bordered w-full" required />
+                    <span>IC</span>
+                </label>
+                
+                <label class="floating-label">
+                    <select id="sex" name="sex" class="select select-bordered w-full" required>
+                        <option value="Male" selected>Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                    <span>Sex</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="number" id="age" name="age" placeholder="Age" class="input input-bordered w-full" required />
+                    <span>Age</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="text" id="mobile_no" name="mobile_no" placeholder="0123456789" class="input input-bordered w-full" required />
+                    <span>Mobile No</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="email" id="email" name="email" placeholder="email@example.com" class="input input-bordered w-full" required />
+                    <span>Email</span>
+                </label>
+                
+                <label class="floating-label md:col-span-2">
+                    <input type="text" id="address" name="address" placeholder="Your Address" class="input input-bordered w-full" required />
+                    <span>Address</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="text" id="username" name="username" placeholder="username" class="input input-bordered w-full" required />
+                    <span>Username</span>
+                </label>
+                
+                <label class="floating-label">
+                    <input type="password" id="password" name="password" placeholder="password" class="input input-bordered w-full" required />
+                    <span>Password</span>
+                </label>
+                
+                <label class="floating-label md:col-span-2">
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="confirm password" class="input input-bordered w-full" required />
+                    <span>Confirm Password</span>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-full mt-2">Register</button>
+        </form>
+        
+        <div class="text-center mt-4">
+            <a href="login.php" class="link link-primary">Back to Login</a>
+        </div>
+    </div>
+</div>
 
 <script>
     document.getElementById('registrationForm').addEventListener('submit', function(event) {

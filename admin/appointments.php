@@ -60,47 +60,64 @@ $query = "SELECT Appointments.AppointmentID, Patients.Name as PatientName, Appoi
 $result = mysqli_query($conn, $query);
 ?>
 
-<h2>Manage Appointments</h2>
-<table>
-    <tr>
-        <!--Add sorting to every column-->
-        <th><a class='cell' href="?sort=AppointmentID&order=<?php echo $new_order; ?>">Appointment ID</a></th>   
-        <th><a class='cell' href="?sort=PatientName&order=<?php echo $new_order; ?>">Patient Name</a></th>
-        <th><a class='cell' href="?sort=Date&order=<?php echo $new_order; ?>">Date</a></th>
-        <th><a class='cell' href="?sort=Time&order=<?php echo $new_order; ?>">Time</a></th>
-        <th><a class='cell' href="?sort=Service&order=<?php echo $new_order; ?>">Service</a></th>
-        <th><a class='cell' href="?sort=Status&order=<?php echo $new_order; ?>">Status</a></th>
-        <th>Change Status</th>
-        <th>Delete</th>
-    </tr>
-    <?php
-    while ($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "<td>" . $row['AppointmentID'] . "</td>";
-        echo "<td>" . $row['PatientName'] . "</td>";
-        echo "<td>" . $row['Date'] . "</td>";
-        echo "<td>" . $row['Time'] . "</td>";
-        echo "<td>" . $row['Service'] . "</td>";
-        echo "<td>" . $row['Status'] . "</td>";
-        echo "<td>
-                <form class='cell' action='' method='post'>
-                    <input type='hidden' name='appointment_id' value='" . $row['AppointmentID'] . "'>
-                    <select class='cell' name='status' onchange='this.form.submit()'>
-                        <option value='Pending'" . ($row['Status'] == 'Pending' ? ' selected' : '') . ">Pending</option>
-                        <option value='Approved'" . ($row['Status'] == 'Approved' ? ' selected' : '') . ">Approved</option>
-                        <option value='Rejected'" . ($row['Status'] == 'Rejected' ? ' selected' : '') . ">Rejected</option>
-                    </select>
-                </form>
-              </td>";
-        echo "<td>
-                <form class='cell' action='' method='post' onsubmit='return confirm(\"Are you sure you want to delete this appointment?\");'>
-                    <input type='hidden' name='delete_appointment_id' value='" . $row['AppointmentID'] . "'>
-                    <button type='submit' class='delete'>Delete</button>
-                </form>
-              </td>";
-        echo "</tr>";
-    }
-    ?>
-</table>
+<h2 class="text-3xl font-bold text-center mb-8">Manage Appointments</h2>
+
+<div class="overflow-x-auto w-full max-w-7xl">
+    <table class="table table-zebra">
+        <thead>
+            <tr>
+                <th><a href="?sort=AppointmentID&order=<?php echo $new_order; ?>" class="link link-hover">Appointment ID</a></th>   
+                <th><a href="?sort=PatientName&order=<?php echo $new_order; ?>" class="link link-hover">Patient Name</a></th>
+                <th><a href="?sort=Date&order=<?php echo $new_order; ?>" class="link link-hover">Date</a></th>
+                <th><a href="?sort=Time&order=<?php echo $new_order; ?>" class="link link-hover">Time</a></th>
+                <th><a href="?sort=Service&order=<?php echo $new_order; ?>" class="link link-hover">Service</a></th>
+                <th><a href="?sort=Status&order=<?php echo $new_order; ?>" class="link link-hover">Status</a></th>
+                <th>Change Status</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            while ($row = mysqli_fetch_assoc($result)) {
+                $statusBadge = '';
+                if ($row['Status'] == 'Pending') {
+                    $statusBadge = '<div class="badge badge-warning">' . htmlspecialchars($row['Status']) . '</div>';
+                } elseif ($row['Status'] == 'Approved') {
+                    $statusBadge = '<div class="badge badge-success">' . htmlspecialchars($row['Status']) . '</div>';
+                } elseif ($row['Status'] == 'Rejected') {
+                    $statusBadge = '<div class="badge badge-error">' . htmlspecialchars($row['Status']) . '</div>';
+                } else {
+                    $statusBadge = '<div class="badge badge-neutral">' . htmlspecialchars($row['Status']) . '</div>';
+                }
+                
+                echo "<tr>";
+                echo "<td>" . $row['AppointmentID'] . "</td>";
+                echo "<td>" . htmlspecialchars($row['PatientName']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['Date']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['Time']) . "</td>";
+                echo "<td>" . htmlspecialchars($row['Service']) . "</td>";
+                echo "<td>" . $statusBadge . "</td>";
+                echo "<td>
+                        <form action='' method='post'>
+                            <input type='hidden' name='appointment_id' value='" . $row['AppointmentID'] . "'>
+                            <select class='select select-bordered select-sm' name='status' onchange='this.form.submit()'>
+                                <option value='Pending'" . ($row['Status'] == 'Pending' ? ' selected' : '') . ">Pending</option>
+                                <option value='Approved'" . ($row['Status'] == 'Approved' ? ' selected' : '') . ">Approved</option>
+                                <option value='Rejected'" . ($row['Status'] == 'Rejected' ? ' selected' : '') . ">Rejected</option>
+                            </select>
+                        </form>
+                      </td>";
+                echo "<td>
+                        <form action='' method='post' onsubmit='return confirm(\"Are you sure you want to delete this appointment?\");'>
+                            <input type='hidden' name='delete_appointment_id' value='" . $row['AppointmentID'] . "'>
+                            <button type='submit' class='btn btn-error btn-sm'>Delete</button>
+                        </form>
+                      </td>";
+                echo "</tr>";
+            }
+            ?>
+        </tbody>
+    </table>
+</div>
 
 <?php include '../public/footer.php'; ?>

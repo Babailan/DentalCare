@@ -27,52 +27,56 @@ $query = "SELECT * FROM Patients ORDER BY $sort_column $sort_order";
 $result = mysqli_query($conn, $query);
 ?>
 
-<h2>Patient Records</h2>
+<h2 class="text-3xl font-bold text-center mb-8">Patient Records</h2>
 
-<input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for names, IC, etc.." title="Type in a name or IC">
+<div class="mb-4 w-full max-w-2xl">
+    <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for names, IC, etc.." title="Type in a name or IC" class="input input-bordered w-full">
+</div>
 
-<table id="patientTable">
-    <thead>
-        <tr>
-            <th><a class='cell' href="?sort=PatientID&order=<?php echo $new_order; ?>">Patient ID</a></th>
-            <th><a class='cell' href="?sort=Name&order=<?php echo $new_order; ?>">Name</a></th>
-            <th><a class='cell' href="?sort=IC&order=<?php echo $new_order; ?>">IC</a></th>
-            <th><a class='cell' href="?sort=Sex&order=<?php echo $new_order; ?>">Sex</a></th>
-            <th><a class='cell' href="?sort=Address&order=<?php echo $new_order; ?>">Address</a></th>
-            <th><a class='cell' href="?sort=Age&order=<?php echo $new_order; ?>">Age</a></th>
-            <th><a class='cell' href="?sort=MobileNo&order=<?php echo $new_order; ?>">Mobile No</a></th>
-            <th>Edit</th>
-            <th>Delete</th>
-        </tr>
-    </thead>
-    <tbody>
-    <?php
-    while ($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "<td>" . $row['PatientID'] . "</td>";
-        echo "<td>" . $row['Name'] . "</td>";
-        echo "<td>" . $row['IC'] . "</td>";
-        echo "<td>" . $row['Sex'] . "</td>";
-        echo "<td>" . $row['Address'] . "</td>";
-        echo "<td>" . $row['Age'] . "</td>";
-        echo "<td>" . $row['MobileNo'] . "</td>";
-        echo "<td>
-                <form class='cell' action='edit_patient.php' method='get'>
-                    <input type='hidden' name='id' value='" . $row['PatientID'] . "'>
-                    <button type='submit'>Edit</button>
-                </form>
-              </td>";
-        echo "<td>
-                <form class='cell' action='' method='post' onsubmit='return confirm(\"Are you sure you want to delete this patient? All data regarding this patient will be deleted permanently\");'>
-                    <input type='hidden' name='delete_patient_id' value='" . $row['PatientID'] . "'>
-                    <button type='submit'>Delete</button>
-                </form>
-              </td>";
-        echo "</tr>";
-    }
-    ?>
-    </tbody>
-</table>
+<div class="overflow-x-auto w-full max-w-7xl">
+    <table id="patientTable" class="table table-zebra">
+        <thead>
+            <tr>
+                <th><a href="?sort=PatientID&order=<?php echo $new_order; ?>" class="link link-hover">Patient ID</a></th>
+                <th><a href="?sort=Name&order=<?php echo $new_order; ?>" class="link link-hover">Name</a></th>
+                <th><a href="?sort=IC&order=<?php echo $new_order; ?>" class="link link-hover">IC</a></th>
+                <th><a href="?sort=Sex&order=<?php echo $new_order; ?>" class="link link-hover">Sex</a></th>
+                <th><a href="?sort=Address&order=<?php echo $new_order; ?>" class="link link-hover">Address</a></th>
+                <th><a href="?sort=Age&order=<?php echo $new_order; ?>" class="link link-hover">Age</a></th>
+                <th><a href="?sort=MobileNo&order=<?php echo $new_order; ?>" class="link link-hover">Mobile No</a></th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php
+        while ($row = mysqli_fetch_assoc($result)) {
+            echo "<tr>";
+            echo "<td>" . $row['PatientID'] . "</td>";
+            echo "<td>" . htmlspecialchars($row['Name']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['IC']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['Sex']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['Address']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['Age']) . "</td>";
+            echo "<td>" . htmlspecialchars($row['MobileNo']) . "</td>";
+            echo "<td>
+                    <form action='edit_patient.php' method='get'>
+                        <input type='hidden' name='id' value='" . $row['PatientID'] . "'>
+                        <button type='submit' class='btn btn-warning btn-sm'>Edit</button>
+                    </form>
+                  </td>";
+            echo "<td>
+                    <form action='' method='post' onsubmit='return confirm(\"Are you sure you want to delete this patient? All data regarding this patient will be deleted permanently\");'>
+                        <input type='hidden' name='delete_patient_id' value='" . $row['PatientID'] . "'>
+                        <button type='submit' class='btn btn-error btn-sm'>Delete</button>
+                    </form>
+                  </td>";
+            echo "</tr>";
+        }
+        ?>
+        </tbody>
+    </table>
+</div>
 
 <script>
 // search bar function - filter rows by value

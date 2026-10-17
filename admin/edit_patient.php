@@ -31,33 +31,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-<h2>Edit Patient</h2>
-<form id="editPatientForm" action="" method="post">
-    <label for="name">Name:</label>
-    <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($patient['Name']); ?>" required>
-    
-    <label for="ic">IC:</label>
-    <input type="text" id="ic" name="ic" value="<?php echo htmlspecialchars($patient['IC']); ?>" required>
-    
-    <label for="sex">Sex:</label>
-    <select id="sex" name="sex" required>
-        <option value="Male" <?php if ($patient['Sex'] == 'Male') echo 'selected'; ?>>Male</option>
-        <option value="Female" <?php if ($patient['Sex'] == 'Female') echo 'selected'; ?>>Female</option>
-    </select>
-    
-    <label for="address">Address:</label>
-    <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($patient['Address']); ?>" required>
-    
-    <label for="age">Age:</label>
-    <input type="number" id="age" name="age" value="<?php echo htmlspecialchars($patient['Age']); ?>" required>
-    
-    <label for="mobile_no">Mobile No:</label>
-    <input type="text" id="mobile_no" name="mobile_no" value="<?php echo htmlspecialchars($patient['MobileNo']); ?>" required>
-    
-    <input type="submit" value="Update">
-</form>
-<div class='back'>
-    <button type="button" onclick="window.location.href='patient_records.php';">Back</button>
+<h2 class="text-3xl font-bold text-center mb-8">Edit Patient</h2>
+
+<div class="card card-bordered w-full max-w-md bg-base-100 shadow-xl">
+    <div class="card-body">
+        <form id="editPatientForm" action="" method="post" class="flex flex-col gap-4">
+            <label class="floating-label">
+                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($patient['Name']); ?>" placeholder="Name" class="input input-bordered w-full" required />
+                <span>Name</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="ic" name="ic" value="<?php echo htmlspecialchars($patient['IC']); ?>" placeholder="IC" class="input input-bordered w-full" required />
+                <span>IC</span>
+            </label>
+            
+            <div class="floating-label">
+                <select id="sex" name="sex" class="select select-bordered w-full" required>
+                    <option value="Male" <?php if ($patient['Sex'] == 'Male') echo 'selected'; ?>>Male</option>
+                    <option value="Female" <?php if ($patient['Sex'] == 'Female') echo 'selected'; ?>>Female</option>
+                </select>
+                <span>Sex</span>
+            </div>
+            
+            <label class="floating-label">
+                <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($patient['Address']); ?>" placeholder="Address" class="input input-bordered w-full" required />
+                <span>Address</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="number" id="age" name="age" value="<?php echo htmlspecialchars($patient['Age']); ?>" placeholder="Age" class="input input-bordered w-full" required />
+                <span>Age</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="mobile_no" name="mobile_no" value="<?php echo htmlspecialchars($patient['MobileNo']); ?>" placeholder="Mobile No" class="input input-bordered w-full" required />
+                <span>Mobile No</span>
+            </label>
+            
+            <button type="submit" class="btn btn-primary w-full mt-2">Update</button>
+        </form>
+        
+        <div class="card-actions justify-center mt-4">
+            <button type="button" class="btn btn-ghost" onclick="window.location.href='patient_records.php';">Back</button>
+        </div>
+    </div>
 </div>
 
 <script>

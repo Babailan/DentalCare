@@ -64,29 +64,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<h2>Add Appointment</h2>
+<h2 class="text-3xl font-bold text-center mb-8">Add Appointment</h2>
 
-<form id="appointmentForm" action="add_appointment.php" method="post">
-    <label for="patient_name">Patient Name:</label>
-    <input type="text" id="patient_name" name="patient_name" required>
-    <br>
-    <label for="mobile_no">Mobile No:</label>
-    <input type="text" id="mobile_no" name="mobile_no" required>
-    <br>
-    <label for="service">Service Type:</label>
-    <input type="text" id="service" name="service" value="<?php echo htmlspecialchars($service); ?>" required>
-    <br>
-    <label for="date">Date:</label>
-    <input type="text" id="date" name="date" value="<?php echo htmlspecialchars($date); ?>" readonly>
-    <br>
-    <label for="time">Time:</label>
-    <input type="text" id="time" name="time" value="<?php echo htmlspecialchars($time); ?>" readonly>
-    <br>
-    <input type="submit" value="Add">
-</form>
-
-<div class="back">
-    <button onclick="window.location.href='admin_slots.php';">Back</button>
+<div class="card card-bordered w-full max-w-md bg-base-100 shadow-xl">
+    <div class="card-body">
+        <form id="appointmentForm" action="add_appointment.php" method="post" class="flex flex-col gap-4">
+            <label class="floating-label">
+                <input type="text" id="patient_name" name="patient_name" placeholder="Patient Name" class="input input-bordered w-full" required />
+                <span>Patient Name</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="mobile_no" name="mobile_no" placeholder="Mobile No" class="input input-bordered w-full" required />
+                <span>Mobile No</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="service" name="service" value="<?php echo htmlspecialchars($service); ?>" placeholder="Service Type" class="input input-bordered w-full" required />
+                <span>Service Type</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="date" name="date" value="<?php echo htmlspecialchars($date); ?>" placeholder="Date" class="input input-bordered w-full" readonly />
+                <span>Date</span>
+            </label>
+            
+            <label class="floating-label">
+                <input type="text" id="time" name="time" value="<?php echo htmlspecialchars($time); ?>" placeholder="Time" class="input input-bordered w-full" readonly />
+                <span>Time</span>
+            </label>
+            
+            <button type="submit" class="btn btn-primary w-full mt-2">Add Appointment</button>
+        </form>
+        
+        <div class="card-actions justify-center mt-4">
+            <button class="btn btn-ghost" onclick="window.location.href='admin_slots.php';">Back</button>
+        </div>
+    </div>
 </div>
 
 <?php include '../public/footer.php'; ?>
