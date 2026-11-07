@@ -1,6 +1,6 @@
 <?php
 // SQLite database stored inside the project's ./database folder.
-$databaseDir = __DIR__ . '/../database';
+$databaseDir = __DIR__ . '/database';
 $databaseFile = $databaseDir . '/dental_appointment_system.db';
 
 if (!is_dir($databaseDir)) {
@@ -24,6 +24,15 @@ try {
                 $conn->exec($statement);
             }
         }
+    }
+
+    // Keep databases created with earlier versions of the schema usable.
+    $appointmentColumns = $conn->query('PRAGMA table_info(Appointments)')->fetchAll(PDO::FETCH_COLUMN, 1);
+    if (!in_array('ServiceID', $appointmentColumns, true)) {
+        $conn->exec('ALTER TABLE Appointments ADD COLUMN ServiceID INTEGER REFERENCES Services(ServiceID) ON DELETE SET NULL');
+    }
+    if (!in_array('Price', $appointmentColumns, true)) {
+        $conn->exec('ALTER TABLE Appointments ADD COLUMN Price REAL NOT NULL DEFAULT 0');
     }
 } catch (PDOException $e) {
     die('Database connection failed: ' . $e->getMessage());

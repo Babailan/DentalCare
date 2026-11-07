@@ -1,8 +1,12 @@
 <?php
 session_start();
-include '../public/config.php';
+require_once __DIR__ . '/../config.php';
 
-$patient_id = $_SESSION['patient'];
+if (!isset($_SESSION['patient'])) {
+    header('Location: ../login.php');
+    exit;
+}
+$patient_id = (int) $_SESSION['patient'];
 $name = trim($_POST['name']);
 $ic = trim($_POST['ic']);
 $sex = $_POST['sex'];

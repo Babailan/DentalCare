@@ -1,13 +1,11 @@
 <?php
 session_start();
-include '../public/header.php';
-include '../public/config.php';
+require_once __DIR__ . '/../config.php';
 
 if (!isset($_SESSION['admin'])) {
-    header('Location: ../public/login.php');
+    header('Location: ../login.php');
     exit;
 }
-
 $patient_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 $stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ?");
@@ -19,38 +17,46 @@ if (!$patient) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $_POST['name'];
-    $ic = $_POST['ic'];
-    $sex = $_POST['sex'];
-    $address = $_POST['address'];
-    $age = (int) $_POST['age'];
-    $mobile_no = $_POST['mobile_no'];
+    $name = trim($_POST['name'] ?? '');
+    $ic = trim($_POST['ic'] ?? '');
+    $sex = $_POST['sex'] ?? '';
+    $address = trim($_POST['address'] ?? '');
+    $age = (int) ($_POST['age'] ?? 0);
+    $mobile_no = trim($_POST['mobile_no'] ?? '');
 
-    $stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ? WHERE PatientID = ?");
-    $stmt->execute([$name, $ic, $sex, $address, $age, $mobile_no, $patient_id]);
+    if ($ic !== '' && !preg_match('/^\d{12}$/', $ic)) {
+        $error = 'IC must be blank or 12 digits.';
+    } else {
+        $stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ? WHERE PatientID = ?");
+        $stmt->execute([$name, $ic === '' ? null : $ic, $sex, $address, $age, $mobile_no, $patient_id]);
 
-    header('Location: patient_records.php');
-    exit;
+        header('Location: patient_records.php');
+        exit;
+    }
 }
+include __DIR__ . '/../header.php';
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Edit Patient</h2>
 
 <div class="card card-bordered w-full max-w-md bg-base-100 shadow-xl">
     <div class="card-body">
+        <?php if (!empty($error)): ?>
+            <p role="alert"><?php echo htmlspecialchars($error); ?></p>
+        <?php endif; ?>
         <form id="editPatientForm" action="" method="post" class="flex flex-col gap-4">
             <label class="floating-label">
-                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($patient['Name']); ?>" placeholder="Name" class="input input-bordered w-full" required />
+                <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($patient['Name']); ?>" placeholder="Name" class="input w-full" required />
                 <span>Name</span>
             </label>
             
             <label class="floating-label">
-                <input type="text" id="ic" name="ic" value="<?php echo htmlspecialchars($patient['IC']); ?>" placeholder="IC" class="input input-bordered w-full" required />
-                <span>IC</span>
+                <input type="text" id="ic" name="ic" value="<?php echo htmlspecialchars($_POST['ic'] ?? $patient['IC'] ?? ''); ?>" placeholder="IC (optional, 12 digits)" inputmode="numeric" pattern="\d{12}" class="input w-full" />
+                <span>IC (optional, 12 digits)</span>
             </label>
             
             <div class="floating-label">
-                <select id="sex" name="sex" class="select select-bordered w-full" required>
+                <select id="sex" name="sex" class="select w-full" required>
                     <option value="Male" <?php if ($patient['Sex'] == 'Male') echo 'selected'; ?>>Male</option>
                     <option value="Female" <?php if ($patient['Sex'] == 'Female') echo 'selected'; ?>>Female</option>
                 </select>
@@ -58,17 +64,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             
             <label class="floating-label">
-                <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($patient['Address']); ?>" placeholder="Address" class="input input-bordered w-full" required />
+                <input type="text" id="address" name="address" value="<?php echo htmlspecialchars($patient['Address']); ?>" placeholder="Address" class="input w-full" required />
                 <span>Address</span>
             </label>
             
             <label class="floating-label">
-                <input type="number" id="age" name="age" value="<?php echo htmlspecialchars($patient['Age']); ?>" placeholder="Age" class="input input-bordered w-full" required />
+                <input type="number" id="age" name="age" value="<?php echo htmlspecialchars($patient['Age']); ?>" placeholder="Age" class="input w-full" required />
                 <span>Age</span>
             </label>
             
             <label class="floating-label">
-                <input type="text" id="mobile_no" name="mobile_no" value="<?php echo htmlspecialchars($patient['MobileNo']); ?>" placeholder="Mobile No" class="input input-bordered w-full" required />
+                <input type="text" id="mobile_no" name="mobile_no" value="<?php echo htmlspecialchars($patient['MobileNo']); ?>" placeholder="Mobile No" class="input w-full" required />
                 <span>Mobile No</span>
             </label>
             
@@ -90,10 +96,10 @@ document.getElementById('editPatientForm').addEventListener('submit', function(e
     const age = document.getElementById('age').value;
     const mobile_no = document.getElementById('mobile_no').value.trim();
 
-    if (!name || !ic || !sex || !address || !age || !mobile_no) {
+    if (!name || !sex || !address || !age || !mobile_no) {
         alert('All fields are required.');
         event.preventDefault();
-    } else if (!/^\d{12}$/.test(ic)) {
+    } else if (ic && !/^\d{12}$/.test(ic)) {
         alert('IC must be a 12-digit number.');
         event.preventDefault();
     } else if (!['Male', 'Female'].includes(sex)) {
@@ -109,4 +115,4 @@ document.getElementById('editPatientForm').addEventListener('submit', function(e
 });
 </script>
 
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>

@@ -4,6 +4,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const generateSlotsButton = isAdmin
     ? document.getElementById("generate-slots-button")
     : null;
+  const servicesRequest = fetch("../services_api.php")
+    .then((response) => {
+      if (!response.ok) throw new Error("Could not load appointment types.");
+      return response.json();
+    });
   let currentMonth = new Date().getMonth();
   let currentYear = new Date().getFullYear();
   let selectedDate = null;
@@ -161,9 +166,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let fetchUrl = isAdmin
       ? `../patient/load_slots.php?date=${formattedDate}`
       : `load_slots.php?date=${formattedDate}`;
-    fetch(fetchUrl)
-      .then((response) => response.json())
-      .then((slots) => {
+    Promise.all([
+      fetch(fetchUrl).then((response) => {
+        if (!response.ok) throw new Error("Could not load available times.");
+        return response.json();
+      }),
+      servicesRequest,
+    ])
+      .then(([slots, services]) => {
         slotsDiv.innerHTML = "";
         let hasAvailableSlots = false;
 
@@ -206,38 +216,51 @@ document.addEventListener("DOMContentLoaded", function () {
             if (isAvailable) {
               hasAvailableSlots = true;
 
-              const cardActions = document.createElement("div");
-              cardActions.className = "card-actions";
+              if (services.length > 0) {
+                const cardActions = document.createElement("div");
+                cardActions.className = "card-actions";
 
-              const serviceDropdown = document.createElement("select");
-              serviceDropdown.className = "select select-bordered select-sm";
-              serviceDropdown.innerHTML = `
-                                <option value="">Select Service</option>
-                                <option value="Dental Bonding">Dental Bonding</option>
-                                <option value="Teeth Cleaning">Teeth Cleaning</option>
-                                <option value="Teeth Whitening">Teeth Whitening</option>
-                                <option value="Tooth Extraction">Tooth Extraction</option>
-                            `;
+                const serviceDropdown = document.createElement("select");
+                serviceDropdown.className = "select select-sm";
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = "Select appointment type";
+                serviceDropdown.appendChild(placeholder);
+                services.forEach((service) => {
+                  const option = document.createElement("option");
+                  option.value = service.ServiceID;
+                  option.textContent = `${service.Name} — RM ${Number(service.Price).toFixed(2)}`;
+                  serviceDropdown.appendChild(option);
+                });
 
-              const bookButton = document.createElement("button");
-              bookButton.className = "btn btn-primary btn-sm";
-              bookButton.textContent = "Book";
-              bookButton.addEventListener("click", () =>
-                bookSlot(date, slot.Time, serviceDropdown.value),
-              );
+                const bookButton = document.createElement("button");
+                bookButton.className = "btn btn-primary btn-sm";
+                bookButton.textContent = "Book";
+                bookButton.addEventListener("click", () =>
+                  bookSlot(date, slot.Time, serviceDropdown.value),
+                );
 
-              cardActions.appendChild(serviceDropdown);
-              cardActions.appendChild(bookButton);
-              cardBody.appendChild(cardActions);
+                cardActions.appendChild(serviceDropdown);
+                cardActions.appendChild(bookButton);
+                cardBody.appendChild(cardActions);
+              }
             }
 
             slotCard.appendChild(cardBody);
             slotsDiv.appendChild(slotCard);
           });
+          if (services.length === 0) {
+            const noServicesAlert = document.createElement("div");
+            noServicesAlert.className = "alert alert-info";
+            noServicesAlert.textContent = "The clinic has not added appointment types yet.";
+            slotsDiv.appendChild(noServicesAlert);
+          }
         } else {
           const noSlotsAlert = document.createElement("div");
           noSlotsAlert.className = "alert alert-info";
-          noSlotsAlert.textContent = "No slots available.";
+          noSlotsAlert.textContent = services.length === 0
+            ? "The clinic has not added appointment types yet."
+            : "No slots available.";
           slotsDiv.appendChild(noSlotsAlert);
         }
 
@@ -247,34 +270,54 @@ document.addEventListener("DOMContentLoaded", function () {
           generateSlotsButton.style.display = "none";
         }
       })
-      .catch((error) => console.error("Error:", error));
+      .catch((error) => {
+        slotsDiv.innerHTML = "";
+        const errorAlert = document.createElement("div");
+        errorAlert.className = "alert alert-error";
+        errorAlert.textContent = error.message || "Could not load appointment details.";
+        slotsDiv.appendChild(errorAlert);
+      });
   }
 
   // Function to book a slot
-  function bookSlot(date, time, service) {
+  function bookSlot(date, time, serviceId) {
     const formattedDate = date.toISOString().split("T")[0];
     // if user is patient
     if (!isAdmin) {
-      if (service) {
+      if (serviceId) {
         fetch("book_appointment.php", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: `date=${formattedDate}&time=${time}&service=${service}`,
+          body: new URLSearchParams({
+            date: formattedDate,
+            time: time.slice(0, 5),
+            service_id: serviceId,
+          }),
         })
-          .then((response) => response.text())
-          .then((result) => {
-            showToast("Appointment booked successfully", "success");
-            loadSlots(date); // Refresh slots after booking
+          .then(async (response) => {
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Could not book this time.");
+            showToast(result.message, "success");
+            loadSlots(date);
           })
-          .catch((error) => console.error("Error:", error));
+          .catch((error) => showToast(error.message, "error"));
       } else {
         showToast("Please select a service.", "error");
       }
     } else {
       // redirect to add_appointment.php if is admin
-      window.location.href = `add_appointment.php?date=${formattedDate}&time=${time}&service=${service}`;
+      if (!serviceId) {
+        showToast("Please select an appointment type.", "error");
+        return;
+      }
+      const params = new URLSearchParams({
+        date: formattedDate,
+        time,
+        service_id: serviceId,
+      });
+      window.location.href = `add_appointment.php?${params}`;
     }
   }
 

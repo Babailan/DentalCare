@@ -1,17 +1,38 @@
 <?php
 session_start();
-include '../public/config.php';
-include '../public/header.php';
+require_once __DIR__ . '/../config.php';
+
+if (!isset($_SESSION['admin'])) {
+    header('Location: ../login.php');
+    exit;
+}
+include __DIR__ . '/../header.php';
 
 // Handle delete request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_patient_id'])) {
     $patient_id = (int) $_POST['delete_patient_id'];
 
     try {
+        $conn->beginTransaction();
+        $stmt = $conn->prepare('SELECT SlotID FROM Appointments WHERE PatientID = ? AND SlotID IS NOT NULL');
+        $stmt->execute([$patient_id]);
+        $slotIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
         $stmt = $conn->prepare("DELETE FROM Patients WHERE PatientID = ?");
         $stmt->execute([$patient_id]);
+        foreach (array_unique($slotIds) as $slotId) {
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND Status IN ('Pending', 'Approved')");
+            $stmt->execute([$slotId]);
+            if ((int) $stmt->fetchColumn() === 0) {
+                $stmt = $conn->prepare("UPDATE Slots SET Status = 'available' WHERE SlotID = ?");
+                $stmt->execute([$slotId]);
+            }
+        }
+        $conn->commit();
         echo "<script>alert('Patient deleted successfully');</script>";
     } catch (PDOException $e) {
+        if ($conn->inTransaction()) {
+            $conn->rollBack();
+        }
         echo "<script>alert('Error deleting patient: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "');</script>";
     }
 }
@@ -30,9 +51,10 @@ $result = $conn->query($query);
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Patient Records</h2>
+<div class="mb-4 w-full max-w-2xl"><a class="btn btn-primary" href="add_patient.php">Create patient account</a></div>
 
 <div class="mb-4 w-full max-w-2xl">
-    <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for names, IC, etc.." title="Type in a name or IC" class="input input-bordered w-full">
+    <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for names, IC, etc.." title="Type in a name or IC" class="input w-full">
 </div>
 
 <div class="overflow-x-auto w-full max-w-7xl">
@@ -116,4 +138,4 @@ function searchTable() {
 }
 </script>
 
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>

@@ -1,11 +1,22 @@
 <?php
-include '../public/config.php';
+session_start();
+require_once __DIR__ . '/../config.php';
+header('Content-Type: application/json; charset=utf-8');
 
-$date = isset($_GET['date']) ? $_GET['date'] : '';
+if (!isset($_SESSION['patient']) && !isset($_SESSION['admin'])) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Not authenticated.']);
+    exit;
+}
 
-$stmt = $conn->prepare("SELECT Time, Status FROM Slots WHERE Date = ?");
+$date = $_GET['date'] ?? '';
+$parsedDate = DateTime::createFromFormat('!Y-m-d', $date);
+if (!$parsedDate || $parsedDate->format('Y-m-d') !== $date) {
+    http_response_code(422);
+    echo json_encode(['error' => 'Invalid date.']);
+    exit;
+}
+
+$stmt = $conn->prepare('SELECT Time, Status FROM Slots WHERE Date = ? ORDER BY Time ASC');
 $stmt->execute([$date]);
-$slots = $stmt->fetchAll();
-
-echo json_encode($slots);
-?>
+echo json_encode($stmt->fetchAll());

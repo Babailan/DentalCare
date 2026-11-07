@@ -1,17 +1,26 @@
+    <?php if ($isPortal): ?>
+                </main>
+                <footer class="portal-footer">
+                    <span>&copy; 2026 CIAT Dental Clinic. Care for every smile.</span>
+                    <a href="<?php echo $contactUrl; ?>">Contact the clinic</a>
+                </footer>
+            </div>
+        </div>
+    <?php else: ?>
         </main>
-        <footer class="footer footer-center bg-base-200 text-base-content p-6">
-            <div>
-                <h3 class="text-lg font-bold">Contact Us</h3>
-                <div class="grid grid-cols-1 gap-1 text-sm mt-2">
-                    <p><strong>Tel:</strong> +60 3 1234 5678</p>
-                    <p><strong>Email:</strong> dentalclinic666@gmail.com</p>
-                    <p><strong>Address:</strong> 123 Jalan Durian, Taman Clinic, 81200 Johor Bahru, Johor</p>
-                </div>
+        <footer class="site-footer">
+            <a class="portal-brand" href="<?php echo $brandUrl; ?>">
+                <span class="portal-brand-mark" aria-hidden="true">✳</span>
+                <span>CIAT<span class="portal-brand-subtitle">Dental Clinic</span></span>
+            </a>
+            <p>Thoughtful, comfortable dental care for you and your family.</p>
+            <div class="site-footer-contact">
+                <span>+60 3 1234 5678</span>
+                <a href="mailto:dentalclinic666@gmail.com">dentalclinic666@gmail.com</a>
+                <a href="<?php echo $contactUrl; ?>">Clinic details</a>
             </div>
-            <div>
-                <p class="text-sm">&copy; 2026 Dental Care System. All rights reserved.</p>
-            </div>
+            <small>&copy; 2026 CIAT Dental Clinic. All rights reserved.</small>
         </footer>
-    </div>
+    <?php endif; ?>
 </body>
 </html>

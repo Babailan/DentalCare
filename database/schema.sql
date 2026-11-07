@@ -21,16 +21,27 @@ CREATE TABLE IF NOT EXISTS Slots (
     Status TEXT CHECK (Status IN ('available', 'unavailable'))
 );
 
+CREATE TABLE IF NOT EXISTS Services (
+    ServiceID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Name TEXT NOT NULL UNIQUE,
+    Description TEXT NOT NULL DEFAULT '',
+    Price REAL NOT NULL CHECK (Price >= 0),
+    IsActive INTEGER NOT NULL DEFAULT 1 CHECK (IsActive IN (0, 1))
+);
+
 CREATE TABLE IF NOT EXISTS Appointments (
     AppointmentID INTEGER PRIMARY KEY AUTOINCREMENT,
     PatientID INTEGER,
     Date TEXT,
     Time TEXT,
     Service TEXT,
+    ServiceID INTEGER,
+    Price REAL NOT NULL DEFAULT 0,
     Status TEXT CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
     SlotID INTEGER,
     FOREIGN KEY (PatientID) REFERENCES Patients(PatientID) ON DELETE CASCADE,
-    FOREIGN KEY (SlotID) REFERENCES Slots(SlotID) ON DELETE CASCADE
+    FOREIGN KEY (SlotID) REFERENCES Slots(SlotID) ON DELETE CASCADE,
+    FOREIGN KEY (ServiceID) REFERENCES Services(ServiceID) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS Admin (

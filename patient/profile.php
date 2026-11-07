@@ -1,7 +1,11 @@
 <?php
 session_start();
-include '../public/config.php';
-include '../public/header.php';
+require_once __DIR__ . '/../config.php';
+if (!isset($_SESSION['patient'])) {
+    header('Location: ../login.php');
+    exit;
+}
+include __DIR__ . '/../header.php';
 
 $patient_id = (int) $_SESSION['patient'];
 $stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ?");
@@ -108,4 +112,4 @@ if (!$patient) {
     });
 </script>
 
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>

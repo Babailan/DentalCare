@@ -1,4 +1,4 @@
-# Dental Appointment Booking System 🦷📅
+# CIAT Dental Clinic Appointment Booking System 🦷📅
 
 This repository contains a **Dental Appointment Booking System** developed for academic purpose. The system aims to improve appointment scheduling efficiency for dental clinics by replacing manual booking processes with an online system.
 
@@ -6,20 +6,20 @@ This repository contains a **Dental Appointment Booking System** developed for a
 
 ## Features
 
-### User (Patient)
-- Register and login
+### Patient
+- Sign in with an account created by the clinic doctor
 - View available appointment slots
-- Book and cancel appointments
-- View appointment history
-- Chat with the clinic administrator
+- Request appointments and view appointment history and prices
+- Chat with the clinic doctor
 - Update personal profile
 
-### Admin
-- Login authentication
-- Manage patient records (view, edit, delete)
-- Approve or reject appointments
+### Doctor (admin)
+- Create and manage patient accounts
+- Manage patient records
+- Create appointment types and prices
+- Confirm or reject appointments
 - Manage appointment slots
-- View daily appointments
+- View today's and earliest upcoming appointments on the dashboard
 - Chat with patients
 
 ---
@@ -47,7 +47,7 @@ C:\xampp\htdocs\{project_folder}
 
 4. Open the system in your browser:
 ```
-http://localhost/{project_folder}/public/index.php
+http://localhost/{project_folder}/index.php
 ```
 
 5. The system is now ready for testing.
@@ -57,7 +57,7 @@ http://localhost/{project_folder}/public/index.php
 Double-click `run.bat` (or run it from a terminal). It starts the PHP built-in server at:
 
 ```
-http://localhost:4000/public/index.php
+http://localhost:4000/index.php
 ```
 
 Press `Ctrl+C` in the terminal to stop the server.
@@ -74,10 +74,12 @@ It is created automatically from `database/schema.sql` the first time the applic
 
 This requires PHP's `pdo_sqlite` extension, which is enabled by default in XAMPP.
 
-Default administrator account:
+Default doctor account:
 
 - Username: `admin`
 - Password: `admin`
+
+Patient accounts are created by the doctor from **Create Patient** after signing in.
 
 ---
 

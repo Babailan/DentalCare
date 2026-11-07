@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Friendly, thoughtful dental care for every smile. Meet the ICare Dental team and get in touch to plan your visit.">
-    <title>ICare Dental | A healthier smile starts here</title>
+    <meta name="description" content="CIAT Dental Clinic offers friendly, thoughtful dental care. Sign in to manage your appointments and connect with your doctor.">
+    <title>CIAT Dental Clinic | A healthier smile starts here</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="css/home.css">
@@ -14,14 +14,14 @@
 
     <header class="site-header">
         <div class="navbar site-navbar">
-            <a class="navbar-start brand" href="./index.php" aria-label="ICare Dental home">
+            <a class="navbar-start brand" href="./index.php" aria-label="CIAT Dental Clinic home">
                 <span class="brand-mark" aria-hidden="true">
                     <svg viewBox="0 0 40 40" fill="none">
                         <path d="M12.4 7.5c-4.1 0-6.1 3.2-5.7 7.2.3 3.4 1.8 6.1 2.8 9.4 1 3.4 1.3 8.3 3.7 8.3 2.7 0 2.1-7.5 6.8-7.5s4.1 7.5 6.8 7.5c2.4 0 2.7-4.9 3.7-8.3 1-3.3 2.5-6 2.8-9.4.4-4-1.6-7.2-5.7-7.2-3.1 0-4.5 1.8-7.6 1.8s-4.5-1.8-7.6-1.8Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                         <path d="M15.2 14.2c1.2-.8 2.5-1.1 4.8-1.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </span>
-                <span class="brand-name">icare<span> dental</span></span>
+                <span class="brand-name">CIAT<span> Dental Clinic</span></span>
             </a>
 
             <nav class="navbar-center site-links" aria-label="Main navigation">
@@ -32,7 +32,7 @@
 
             <div class="navbar-end site-actions">
                 <a class="sign-in-link" href="./login.php">Sign in</a>
-                <a class="btn btn-primary quote-button" href="./contact.php">GET A QUOTE</a>
+                <a class="btn btn-primary quote-button" href="./login.php">PATIENT SIGN IN</a>
             </div>
         </div>
     </header>
@@ -45,7 +45,7 @@
                     <h1>Feel good about your <em>smile.</em></h1>
                     <p class="hero-description">Thoughtful, comfortable dental care for you and your family. We're here to make every visit feel a little easier.</p>
                     <div class="hero-actions">
-                        <a class="btn btn-primary primary-button" href="./contact.php">Get a quote <span aria-hidden="true">→</span></a>
+                        <a class="btn btn-primary primary-button" href="./login.php">Sign in to book <span aria-hidden="true">→</span></a>
                         <a class="text-link" href="#services">Explore our services <span aria-hidden="true">↗</span></a>
                     </div>
                     <div class="hero-note">
@@ -123,7 +123,7 @@
                 <span class="photo-stamp">A little<br>more care.</span>
             </div>
             <div class="care-copy">
-                <p class="eyebrow"><span></span> The ICare difference</p>
+                <p class="eyebrow"><span></span> The CIAT difference</p>
                 <h2>Good care feels<br><em>like being heard.</em></h2>
                 <p>We believe a great dental visit starts with a conversation. Our team takes time to understand what matters to you, explain your options, and help you feel comfortable at every step.</p>
                 <ul class="care-list">
@@ -153,7 +153,7 @@
                 </details>
                 <details class="faq-item">
                     <summary>Do you welcome new patients?</summary>
-                    <p>Yes, we welcome new patients and families. Get in touch to tell us what you need and we can guide you from there.</p>
+                    <p>Yes. Contact the clinic doctor to have a patient account created, then sign in to request appointments and message the doctor.</p>
                 </details>
             </div>
         </section>
@@ -163,7 +163,7 @@
                 <p class="eyebrow"><span></span> Your next step</p>
                 <h2>Let’s make room<br>for a brighter smile.</h2>
             </div>
-            <a class="btn btn-primary closing-button" href="./contact.php">GET A QUOTE <span aria-hidden="true">→</span></a>
+            <a class="btn btn-primary closing-button" href="./login.php">PATIENT SIGN IN <span aria-hidden="true">→</span></a>
             <span class="cta-decoration" aria-hidden="true">✳</span>
         </section>
     </main>
@@ -175,7 +175,7 @@
                     <span class="brand-mark" aria-hidden="true">
                         <svg viewBox="0 0 40 40" fill="none"><path d="M12.4 7.5c-4.1 0-6.1 3.2-5.7 7.2.3 3.4 1.8 6.1 2.8 9.4 1 3.4 1.3 8.3 3.7 8.3 2.7 0 2.1-7.5 6.8-7.5s4.1 7.5 6.8 7.5c2.4 0 2.7-4.9 3.7-8.3 1-3.3 2.5-6 2.8-9.4.4-4-1.6-7.2-5.7-7.2-3.1 0-4.5 1.8-7.6 1.8s-4.5-1.8-7.6-1.8Z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </span>
-                    <span class="brand-name">icare<span> dental</span></span>
+                    <span class="brand-name">CIAT<span> Dental Clinic</span></span>
                 </a>
                 <p>Thoughtful dental care<br>for a lifetime of smiles.</p>
             </div>
@@ -189,12 +189,12 @@
                 <h2>Explore</h2>
                 <a href="#services">Services</a>
                 <a href="#faq">FAQ</a>
-                <a href="./contact.php">Get a quote</a>
+                <a href="./contact.php">Contact the clinic</a>
                 <a href="./login.php">Sign in</a>
             </nav>
         </div>
         <div class="footer-bottom">
-            <span>&copy; 2026 ICare Dental. All rights reserved.</span>
+            <span>&copy; 2026 CIAT Dental Clinic. All rights reserved.</span>
             <a href="#main-content">Back to top ↑</a>
         </div>
     </footer>

@@ -18,8 +18,8 @@ if not exist "%PHP_EXE%" (
 )
 
 echo ============================================================
-echo  Dental Appointment System
-echo  URL: http://localhost:4000/public/index.php
+echo  CIAT Dental Clinic
+echo  URL: http://localhost:4000/index.php
 echo  Press Ctrl+C to stop the server.
 echo ============================================================
 echo.

@@ -1,146 +1,105 @@
 <?php
 session_start();
-include '../public/config.php';
-include '../public/header.php';
+require_once __DIR__ . '/../config.php';
 
-// Ensure only admin can access this page
 if (!isset($_SESSION['admin'])) {
-    header('Location: ../public/login.php');
+    header('Location: ../login.php');
     exit;
 }
 
 $message = '';
+$messageType = 'error';
+$date = $_POST['date'] ?? $_GET['date'] ?? '';
+$time = $_POST['time'] ?? $_GET['time'] ?? '';
+$serviceId = (int) ($_POST['service_id'] ?? $_GET['service_id'] ?? 0);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Handle form submission
-    $patient_name = $_POST['patient_name'];
-    $mobile_no = $_POST['mobile_no'];
-    $service = $_POST['service'];
-    $date = $_POST['date'];
-    $time = $_POST['time'];
+    $patientId = filter_var($_POST['patient_id'] ?? null, FILTER_VALIDATE_INT);
+    $dateValid = DateTime::createFromFormat('!Y-m-d', $date);
+    $timeValid = preg_match('/^\d{2}:\d{2}$/', $time) === 1;
 
-    // Find the patient ID based on the provided name and mobile number
-    $stmt = $conn->prepare("SELECT PatientID FROM Patients WHERE Name = ? AND MobileNo = ?");
-    $stmt->execute([$patient_name, $mobile_no]);
-    $patient = $stmt->fetch();
+    $patientStmt = $conn->prepare('SELECT PatientID FROM Patients WHERE PatientID = ?');
+    $patientStmt->execute([$patientId]);
+    $patient = $patientStmt->fetch();
+    $serviceStmt = $conn->prepare('SELECT ServiceID, Name, Price FROM Services WHERE ServiceID = ? AND IsActive = 1');
+    $serviceStmt->execute([$serviceId]);
+    $service = $serviceStmt->fetch();
+    $slotStmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time LIKE ? AND Status = 'available'");
+    $slotStmt->execute([$date, $time . '%']);
+    $slot = $slotStmt->fetch();
 
-    if ($patient) {
-        $patient_id = $patient['PatientID'];
+    if (!$patient || !$service || !$slot || !$dateValid || $dateValid->format('Y-m-d') !== $date || !$timeValid || $date < date('Y-m-d')) {
+        $message = 'Choose a valid patient and service, and verify that the selected slot is still available.';
     } else {
-        // Insert new patient if not found
         try {
-            $stmt = $conn->prepare("INSERT INTO Patients (Name, MobileNo) VALUES (?, ?)");
-            $stmt->execute([$patient_name, $mobile_no]);
-            $patient_id = $conn->lastInsertId();
-        } catch (PDOException $e) {
-            $message = "Error inserting new patient: " . $e->getMessage();
-        }
-    }
-
-    if (isset($patient_id)) {
-        // Find the SlotID based on Date and Time
-        $stmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time = ?");
-        $stmt->execute([$date, $time]);
-        $slot = $stmt->fetch();
-
-        if ($slot) {
-            $slot_id = $slot['SlotID'];
-
-            // Insert the appointment
-            try {
-                $stmt = $conn->prepare("INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES (?, ?, ?, ?, 'Pending', ?)");
-                $stmt->execute([$patient_id, $date, $time, $service, $slot_id]);
-                $message = "Appointment added successfully";
-            } catch (PDOException $e) {
-                $message = "Error: " . $e->getMessage();
+            $conn->beginTransaction();
+            $reserve = $conn->prepare("UPDATE Slots SET Status = 'unavailable' WHERE SlotID = ? AND Status = 'available'");
+            $reserve->execute([$slot['SlotID']]);
+            if ($reserve->rowCount() !== 1) {
+                throw new RuntimeException('The selected slot is no longer available.');
             }
-        } else {
-            $message = "Slot not found. Please check the date and time.";
+            $stmt = $conn->prepare("INSERT INTO Appointments (PatientID, Date, Time, Service, ServiceID, Price, Status, SlotID) VALUES (?, ?, ?, ?, ?, ?, 'Approved', ?)");
+            $stmt->execute([$patient['PatientID'], $date, $time . ':00', $service['Name'], $service['ServiceID'], $service['Price'], $slot['SlotID']]);
+            $conn->commit();
+            $message = 'Appointment added and confirmed.';
+            $messageType = 'success';
+        } catch (RuntimeException $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            $message = $e->getMessage();
+        } catch (PDOException $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            throw $e;
         }
     }
-} else {
-    // Retrieve date, time, and service from query parameters for GET request
-    $date = isset($_GET['date']) ? $_GET['date'] : '';
-    $time = isset($_GET['time']) ? $_GET['time'] : '';
-    $service = isset($_GET['service']) ? $_GET['service'] : '';
 }
+
+$patients = $conn->query('SELECT PatientID, Name, MobileNo FROM Patients ORDER BY Name ASC')->fetchAll();
+$services = $conn->query('SELECT ServiceID, Name, Price FROM Services WHERE IsActive = 1 ORDER BY Name ASC')->fetchAll();
+include __DIR__ . '/../header.php';
 ?>
 
-<h2 class="text-3xl font-bold text-center mb-8">Add Appointment</h2>
-
-<div class="card card-bordered w-full max-w-md bg-base-100 shadow-xl">
-    <div class="card-body">
-        <form id="appointmentForm" action="add_appointment.php" method="post" class="flex flex-col gap-4">
-            <label class="floating-label">
-                <input type="text" id="patient_name" name="patient_name" placeholder="Patient Name" class="input input-bordered w-full" required />
-                <span>Patient Name</span>
+<div class="mx-auto w-full max-w-2xl px-4 py-8">
+    <h1 class="mb-6 text-3xl font-bold">Add appointment</h1>
+    <?php if ($message !== ''): ?>
+        <div class="alert alert-<?php echo $messageType; ?> mb-4" role="status"><?php echo htmlspecialchars($message); ?></div>
+    <?php endif; ?>
+    <form id="appointmentForm" action="add_appointment.php" method="post" class="card card-border bg-base-100 shadow-sm">
+        <div class="card-body flex flex-col gap-4">
+            <label>
+                <span class="mb-1 block text-sm font-medium">Patient</span>
+                <select class="select w-full" name="patient_id" required>
+                    <option value="">Select a patient</option>
+                    <?php foreach ($patients as $patient): ?>
+                        <option value="<?php echo (int) $patient['PatientID']; ?>"><?php echo htmlspecialchars($patient['Name'] . ' (' . $patient['MobileNo'] . ')'); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </label>
-            
-            <label class="floating-label">
-                <input type="text" id="mobile_no" name="mobile_no" placeholder="Mobile No" class="input input-bordered w-full" required />
-                <span>Mobile No</span>
+            <label>
+                <span class="mb-1 block text-sm font-medium">Appointment type</span>
+                <select class="select w-full" name="service_id" required>
+                    <option value="">Select a service</option>
+                    <?php foreach ($services as $service): ?>
+                        <option value="<?php echo (int) $service['ServiceID']; ?>" <?php echo (int) $service['ServiceID'] === $serviceId ? 'selected' : ''; ?>><?php echo htmlspecialchars($service['Name']); ?> — RM <?php echo number_format((float) $service['Price'], 2); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </label>
-            
-            <label class="floating-label">
-                <input type="text" id="service" name="service" value="<?php echo htmlspecialchars($service); ?>" placeholder="Service Type" class="input input-bordered w-full" required />
-                <span>Service Type</span>
+            <label>
+                <span class="mb-1 block text-sm font-medium">Date</span>
+                <input class="input w-full" type="date" name="date" value="<?php echo htmlspecialchars($date); ?>" required readonly>
             </label>
-            
-            <label class="floating-label">
-                <input type="text" id="date" name="date" value="<?php echo htmlspecialchars($date); ?>" placeholder="Date" class="input input-bordered w-full" readonly />
-                <span>Date</span>
+            <label>
+                <span class="mb-1 block text-sm font-medium">Time</span>
+                <input class="input w-full" type="time" name="time" value="<?php echo htmlspecialchars(substr($time, 0, 5)); ?>" required readonly>
             </label>
-            
-            <label class="floating-label">
-                <input type="text" id="time" name="time" value="<?php echo htmlspecialchars($time); ?>" placeholder="Time" class="input input-bordered w-full" readonly />
-                <span>Time</span>
-            </label>
-            
-            <button type="submit" class="btn btn-primary w-full mt-2">Add Appointment</button>
-        </form>
-        
-        <div class="card-actions justify-center mt-4">
-            <button class="btn btn-ghost" onclick="window.location.href='admin_slots.php';">Back</button>
+            <div class="card-actions">
+                <button class="btn btn-primary" type="submit">Add appointment</button>
+                <a class="btn btn-ghost" href="admin_slots.php">Back to slots</a>
+            </div>
         </div>
-    </div>
+    </form>
 </div>
-
-<?php include '../public/footer.php'; ?>
-
-<?php if (!empty($message)): ?>
-<script>
-    window.onload = function() {
-        alert("<?php echo $message; ?>");
-    };
-</script>
-<?php endif; ?>
-
-<script>
-document.getElementById('appointmentForm').addEventListener('submit', function(event) {
-    const patientName = document.getElementById('patient_name').value.trim();
-    const mobileNo = document.getElementById('mobile_no').value.trim();
-    const service = document.getElementById('service').value.trim();
-
-    // Validate patient name
-    if (patientName === '') {
-        alert('Please enter the patient name.');
-        event.preventDefault();
-        return;
-    }
-
-    // Validate mobile number
-    const mobileNoPattern = /^[0-9]{10,12}$/; // Assuming a valid mobile number is 10-12 digits
-    if (!mobileNoPattern.test(mobileNo)) {
-        alert('Please enter a valid mobile number.');
-        event.preventDefault();
-        return;
-    }
-
-    // Validate service type
-    if (service === '') {
-        alert('Please enter the service type.');
-        event.preventDefault();
-        return;
-    }
-});
-</script>
+<?php include __DIR__ . '/../footer.php'; ?>

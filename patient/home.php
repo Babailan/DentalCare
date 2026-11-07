@@ -1,21 +1,25 @@
 <?php
 session_start();
-include '../public/config.php';
-include '../public/header.php';
+require_once __DIR__ . '/../config.php';
+if (!isset($_SESSION['patient'])) {
+    header('Location: ../login.php');
+    exit;
+}
+include __DIR__ . '/../header.php';
 ?>
 
 <!-- Hero Section -->
 <div class="hero-section">
-    <h1>Welcome to Our Dental Appointment Booking System</h1>
+    <h1>Welcome to CIAT Dental Clinic</h1>
     <p>Your smile, our commitment.</p>
 </div>
 
 <!-- Horizontal Card -->
 <div class="horizontal-card">
     <div class="left-content">
-        <h3>Our Mission</h3>
-        <p>We are dedicated to providing the best dental care services. Book your appointment today to experience exceptional dental care tailored to your needs.</p>
-        <button onclick="window.location.href='appointment_slots.php';">Book Appointment</button>
+        <h3>Your dental care, in one place</h3>
+        <p>Request a visit, chat with the doctor, and keep track of your appointment history.</p>
+        <button onclick="window.location.href='appointment_slots.php';">Request Appointment</button>
     </div>
     <div class="right-content">
         <img src="../images/dental_family.jpg" alt="Family with good dental care">
@@ -74,7 +78,7 @@ include '../public/header.php';
     <button class="next" onclick="moveSlide(1)">&#10095;</button>
 </div>
 
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>
 
 <script>
 let currentSlide = 0;

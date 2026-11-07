@@ -1,13 +1,13 @@
 <?php
 session_start();
-include '../public/config.php';
-include '../public/header.php';
+require_once __DIR__ . '/../config.php';
 
 // Ensure only admin can access this page
 if (!isset($_SESSION['admin'])) {
-    header('Location: ../public/login.php');
+    header('Location: ../login.php');
     exit;
 }
+include __DIR__ . '/../header.php';
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Manage Slots</h2>
@@ -29,4 +29,4 @@ if (!isset($_SESSION['admin'])) {
 </script>
 <script src="../js/calendar.js"></script>
 
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>

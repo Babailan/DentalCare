@@ -17,7 +17,9 @@ $stmt->execute([$username]);
 $admin = $stmt->fetch();
 
 if ($admin) {
-    if ($password === $admin['Password']) {
+    $adminPasswordMatches = password_verify($password, $admin['Password'])
+        || hash_equals((string) $admin['Password'], $password);
+    if ($adminPasswordMatches) {
         $_SESSION['admin'] = $admin['AdminID'];
         header('Location: ../admin/dashboard.php');
         exit;

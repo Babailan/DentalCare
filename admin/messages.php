@@ -1,10 +1,10 @@
 <?php
 session_start();
-include '../public/config.php';
+require_once __DIR__ . '/../config.php';
 
 // Ensure only admin can access this page
 if (!isset($_SESSION['admin'])) {
-    header('Location: ../public/login.php');
+    header('Location: ../login.php');
     exit;
 }
 
@@ -42,30 +42,31 @@ if ($chatReady) {
     }
 }
 
-include '../public/header.php';
+include __DIR__ . '/../header.php';
 ?>
 
-<h2>Messages</h2>
+<h2 class="text-3xl font-bold mb-6">Messages</h2>
 
 <?php if (!$chatReady): ?>
-    <p>The chat feature is not set up yet. Please make sure <code>database/schema.sql</code> is present and reload the page.</p>
+    <div class="alert alert-info">The chat feature is not set up yet. Please make sure <code>database/schema.sql</code> is present and reload the page.</div>
 <?php else: ?>
-    <div class="chat-layout" style="display: flex; gap: 1rem; width: 100%; max-width: 1100px; align-items: flex-start;">
-        <aside class="chat-conversations" style="flex: 0 0 280px; border: 1px solid #ccc; padding: 8px;">
-            <h3>Patients</h3>
-            <ul style="list-style: none; padding: 0; margin: 0;">
+    <div class="chat-layout">
+        <aside class="chat-conversations card card-border bg-base-100">
+            <div class="card-body">
+            <h3 class="card-title">Patients</h3>
+            <ul class="menu p-0">
                 <?php if (count($conversations) === 0): ?>
                     <li>No patients yet.</li>
                 <?php else: ?>
                     <?php foreach ($conversations as $conversation): ?>
-                        <li style="margin-bottom: 8px;">
-                            <a href="messages.php?patient_id=<?php echo (int) $conversation['PatientID']; ?>">
+                        <li>
+                            <a class="<?php echo (int) $conversation['PatientID'] === $selected_patient_id ? 'active' : ''; ?>" href="messages.php?patient_id=<?php echo (int) $conversation['PatientID']; ?>">
                                 <?php echo htmlspecialchars($conversation['Name']); ?>
                                 <?php if ((int) $conversation['UnreadCount'] > 0): ?>
                                     <strong>(<?php echo (int) $conversation['UnreadCount']; ?> new)</strong>
                                 <?php endif; ?>
                             </a>
-                            <div style="font-size: 0.85em; color: #666;">
+                            <div class="conversation-preview">
                                 <?php
                                 if ($conversation['LastMessage'] !== null) {
                                     $preview = $conversation['LastMessage'];
@@ -84,31 +85,34 @@ include '../public/header.php';
                     <?php endforeach; ?>
                 <?php endif; ?>
             </ul>
+            </div>
         </aside>
 
-        <section class="chat-panel" style="flex: 1; min-width: 0;">
+        <section class="chat-panel card card-border bg-base-100">
+            <div class="card-body">
             <?php if ($selected_patient): ?>
-                <h3>Chat with <?php echo htmlspecialchars($selected_patient['Name']); ?></h3>
+                <h3 class="card-title">Chat with <?php echo htmlspecialchars($selected_patient['Name']); ?></h3>
 
                 <div id="chat-app"
                      data-role="admin"
                      data-patient-id="<?php echo (int) $selected_patient['PatientID']; ?>"
-                     data-api="../public/chat_api.php">
-                    <div id="chat-messages" style="height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 8px; margin-bottom: 8px;">
+                     data-api="../chat_api.php">
+                    <div id="chat-messages" class="chat-history">
                         <p id="chat-empty">No messages yet.</p>
                     </div>
                     <div id="chat-status" role="status" aria-live="polite"></div>
                     <form id="chat-form">
-                        <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Type a message..." style="width: 100%; box-sizing: border-box;"></textarea>
-                        <button type="submit">Send</button>
+                        <textarea id="chat-input" class="textarea w-full" rows="3" maxlength="2000" placeholder="Type a message..."></textarea>
+                        <button class="btn btn-primary" type="submit">Send</button>
                     </form>
                 </div>
             <?php else: ?>
                 <p>Select a patient to start chatting.</p>
             <?php endif; ?>
+            </div>
         </section>
     </div>
 <?php endif; ?>
 
 <script src="../js/chat.js"></script>
-<?php include '../public/footer.php'; ?>
+<?php include __DIR__ . '/../footer.php'; ?>
