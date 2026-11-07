@@ -3,32 +3,45 @@ session_start();
 include '../public/config.php';
 include '../public/header.php';
 
-$patient_id = $_SESSION['patient'];
+if (!isset($_SESSION['patient'])) {
+    header('Location: ../public/login.php');
+    exit;
+}
+
+$patient_id = (int) $_SESSION['patient'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_appointment'])) {
-    $appointment_id = $_POST['id'];
+    $appointment_id = (int) $_POST['id'];
 
-    // Fetch SlotID for the appointment
-    $appointment_query = "SELECT SlotID FROM Appointments WHERE AppointmentID=$appointment_id";
-    $appointment_result = mysqli_query($conn, $appointment_query);
-    $appointment = mysqli_fetch_assoc($appointment_result);
-    $slot_id = $appointment['SlotID'];
+    try {
+        // Fetch SlotID for the appointment
+        $stmt = $conn->prepare("SELECT SlotID FROM Appointments WHERE AppointmentID = ? AND PatientID = ?");
+        $stmt->execute([$appointment_id, $patient_id]);
+        $appointment = $stmt->fetch();
 
-    // Delete appointment
-    $query = "DELETE FROM Appointments WHERE AppointmentID=$appointment_id";
-    if (mysqli_query($conn, $query)) {
-        // Update slot status
-        $slot_query = "UPDATE Slots SET Status='available' WHERE SlotID=$slot_id";
-        mysqli_query($conn, $slot_query);
+        if ($appointment) {
+            // Delete appointment
+            $stmt = $conn->prepare("DELETE FROM Appointments WHERE AppointmentID = ?");
+            $stmt->execute([$appointment_id]);
 
-        echo "<script>alert('Appointment cancelled successfully');</script>";
-    } else {
-        echo "<script>alert('Error: " . mysqli_error($conn) . "');</script>";
+            // Update slot status
+            if ($appointment['SlotID'] !== null) {
+                $stmt = $conn->prepare("UPDATE Slots SET Status = 'available' WHERE SlotID = ?");
+                $stmt->execute([$appointment['SlotID']]);
+            }
+
+            echo "<script>alert('Appointment cancelled successfully');</script>";
+        } else {
+            echo "<script>alert('Appointment not found.');</script>";
+        }
+    } catch (PDOException $e) {
+        echo "<script>alert('Error: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "');</script>";
     }
 }
 
-$query = "SELECT * FROM Appointments WHERE PatientID=$patient_id";
-$result = mysqli_query($conn, $query);
+$stmt = $conn->prepare("SELECT * FROM Appointments WHERE PatientID = ?");
+$stmt->execute([$patient_id]);
+$result = $stmt->fetchAll();
 ?>
 
 <h2>My Appointments</h2>
@@ -41,12 +54,12 @@ $result = mysqli_query($conn, $query);
         <th>Action</th>
     </tr>
     <?php
-    while ($row = mysqli_fetch_assoc($result)) {
+    foreach ($result as $row) {
         echo "<tr>";
-        echo "<td>" . $row['Date'] . "</td>";
-        echo "<td>" . $row['Time'] . "</td>";
-        echo "<td>" . $row['Service'] . "</td>";
-        echo "<td>" . $row['Status'] . "</td>";
+        echo "<td>" . htmlspecialchars($row['Date']) . "</td>";
+        echo "<td>" . htmlspecialchars($row['Time']) . "</td>";
+        echo "<td>" . htmlspecialchars($row['Service']) . "</td>";
+        echo "<td>" . htmlspecialchars($row['Status']) . "</td>";
         if ($row['Status'] == 'Pending') {
             echo "<td>
                     <form class='cell' action='' method='post' onsubmit='return confirm(\"Are you sure you want to cancel this appointment?\");'>

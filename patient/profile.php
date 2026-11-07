@@ -3,13 +3,12 @@ session_start();
 include '../public/config.php';
 include '../public/header.php';
 
-$patient_id = $_SESSION['patient'];
-$query = "SELECT * FROM Patients WHERE PatientID = $patient_id";
-$result = mysqli_query($conn, $query);
+$patient_id = (int) $_SESSION['patient'];
+$stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ?");
+$stmt->execute([$patient_id]);
+$patient = $stmt->fetch();
 
-if ($result && mysqli_num_rows($result) > 0) {
-    $patient = mysqli_fetch_assoc($result);
-} else {
+if (!$patient) {
     die('Error: No patient data found.');
 }
 ?>

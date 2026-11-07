@@ -11,6 +11,7 @@ This repository contains a **Dental Appointment Booking System** developed for a
 - View available appointment slots
 - Book and cancel appointments
 - View appointment history
+- Chat with the clinic administrator
 - Update personal profile
 
 ### Admin
@@ -19,6 +20,7 @@ This repository contains a **Dental Appointment Booking System** developed for a
 - Approve or reject appointments
 - Manage appointment slots
 - View daily appointments
+- Chat with patients
 
 ---
 
@@ -35,30 +37,47 @@ This repository contains a **Dental Appointment Booking System** developed for a
 
 1. Install and open XAMPP.
 
-2. Start the Apache and MySQL services.
+2. Start the **Apache** service. MySQL/phpMyAdmin is no longer required.
 
-3. Open phpMyAdmin at:
-
-```
-http://localhost/phpmyadmin
-```
-
-4. Create the database by executing the SQL script:
-- Open the SQL tab in phpMyAdmin
-- Paste and run the contents of schema.sql
-
-5. Copy the project folder into:
+3. Copy the project folder into:
 
 ```
 C:\xampp\htdocs\{project_folder}
 ```
 
-6. Open the system in your browser:
+4. Open the system in your browser:
 ```
-http://localhost/{project_folder}/index.php
+http://localhost/{project_folder}/public/index.php
 ```
 
-7. The system is now ready for testing.
+5. The system is now ready for testing.
+
+### Run on port 4000
+
+Double-click `run.bat` (or run it from a terminal). It starts the PHP built-in server at:
+
+```
+http://localhost:4000/public/index.php
+```
+
+Press `Ctrl+C` in the terminal to stop the server.
+
+### Database
+
+The system uses a SQLite database stored at:
+
+```
+database/dental_appointment_system.db
+```
+
+It is created automatically from `database/schema.sql` the first time the application loads. To reset all data, delete `database/dental_appointment_system.db` and reload the page.
+
+This requires PHP's `pdo_sqlite` extension, which is enabled by default in XAMPP.
+
+Default administrator account:
+
+- Username: `admin`
+- Password: `admin`
 
 ---
 

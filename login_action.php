@@ -2,8 +2,8 @@
 session_start();
 include 'config.php';
 
-$username = $_POST['username'];
-$password = $_POST['password'];
+$username = isset($_POST['username']) ? $_POST['username'] : '';
+$password = isset($_POST['password']) ? $_POST['password'] : '';
 
 // Function to redirect with an error message
 function redirect_with_error($message) {
@@ -12,39 +12,31 @@ function redirect_with_error($message) {
 }
 
 // Check if user is admin
-$query = "SELECT * FROM Admin WHERE Username=?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt = $conn->prepare("SELECT * FROM Admin WHERE Username = ?");
+$stmt->execute([$username]);
+$admin = $stmt->fetch();
 
-if ($result->num_rows == 1) {
-    $admin = $result->fetch_assoc();
+if ($admin) {
     if ($password === $admin['Password']) {
         $_SESSION['admin'] = $admin['AdminID'];
         header('Location: ../admin/dashboard.php');
         exit;
-    } else {
-        redirect_with_error('Invalid credentials. Please try again.');
     }
+    redirect_with_error('Invalid credentials. Please try again.');
 }
 
 // Check if user is patient
-$query = "SELECT * FROM Patients WHERE Username=?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt = $conn->prepare("SELECT * FROM Patients WHERE Username = ?");
+$stmt->execute([$username]);
+$patient = $stmt->fetch();
 
-if ($result->num_rows == 1) {
-    $patient = $result->fetch_assoc();
+if ($patient) {
     if (password_verify($password, $patient['Password'])) {
         $_SESSION['patient'] = $patient['PatientID'];
         header('Location: ../patient/home.php');
         exit;
-    } else {
-        redirect_with_error('Invalid credentials. Please try again.');
     }
+    redirect_with_error('Invalid credentials. Please try again.');
 }
 
 // Invalid login

@@ -2,23 +2,32 @@
 session_start();
 include '../public/config.php';
 
-$patient_id = $_SESSION['patient'];
-$date = $_POST['date'];
-$time = $_POST['time'];
-$service = $_POST['service'];
+if (!isset($_SESSION['patient'])) {
+    http_response_code(401);
+    echo 'Not authenticated.';
+    exit;
+}
+
+$patient_id = (int) $_SESSION['patient'];
+$date = isset($_POST['date']) ? $_POST['date'] : '';
+$time = isset($_POST['time']) ? $_POST['time'] : '';
+$service = isset($_POST['service']) ? $_POST['service'] : '';
 
 // Fetch SlotID based on date and time
-$slot_query = "SELECT SlotID FROM Slots WHERE Date='$date' AND Time='$time' AND Status='available'";
-$slot_result = mysqli_query($conn, $slot_query);
-$slot = mysqli_fetch_assoc($slot_result);
-$slot_id = $slot['SlotID'];
+$stmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time = ? AND Status = 'available'");
+$stmt->execute([$date, $time]);
+$slot = $stmt->fetch();
 
-if ($slot_id) {
-    $query = "INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES ($patient_id, '$date', '$time', '$service', 'Pending', $slot_id)";
-    if (mysqli_query($conn, $query)) {
+if ($slot) {
+    $slot_id = $slot['SlotID'];
+
+    try {
+        $stmt = $conn->prepare("INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES (?, ?, ?, ?, 'Pending', ?)");
+        $stmt->execute([$patient_id, $date, $time, $service, $slot_id]);
         header('Location: appointments.php');
-    } else {
-        echo "Error: " . mysqli_error($conn);
+        exit;
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
     }
 } else {
     echo "No available slot for the selected date and time.";

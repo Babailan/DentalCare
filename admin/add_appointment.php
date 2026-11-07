@@ -20,37 +20,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $time = $_POST['time'];
 
     // Find the patient ID based on the provided name and mobile number
-    $query = "SELECT PatientID FROM Patients WHERE Name = '$patient_name' AND MobileNo = '$mobile_no'";
-    $result = mysqli_query($conn, $query);
+    $stmt = $conn->prepare("SELECT PatientID FROM Patients WHERE Name = ? AND MobileNo = ?");
+    $stmt->execute([$patient_name, $mobile_no]);
+    $patient = $stmt->fetch();
 
-    if (mysqli_num_rows($result) > 0) {
-        $row = mysqli_fetch_assoc($result);
-        $patient_id = $row['PatientID'];
+    if ($patient) {
+        $patient_id = $patient['PatientID'];
     } else {
         // Insert new patient if not found
-        $insert_patient_query = "INSERT INTO Patients (Name, MobileNo) VALUES ('$patient_name', '$mobile_no')";
-        if (mysqli_query($conn, $insert_patient_query)) {
-            $patient_id = mysqli_insert_id($conn);
-        } else {
-            $message = "Error inserting new patient: " . mysqli_error($conn);
+        try {
+            $stmt = $conn->prepare("INSERT INTO Patients (Name, MobileNo) VALUES (?, ?)");
+            $stmt->execute([$patient_name, $mobile_no]);
+            $patient_id = $conn->lastInsertId();
+        } catch (PDOException $e) {
+            $message = "Error inserting new patient: " . $e->getMessage();
         }
     }
 
     if (isset($patient_id)) {
         // Find the SlotID based on Date and Time
-        $slot_query = "SELECT SlotID FROM Slots WHERE Date = '$date' AND Time = '$time'";
-        $slot_result = mysqli_query($conn, $slot_query);
+        $stmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time = ?");
+        $stmt->execute([$date, $time]);
+        $slot = $stmt->fetch();
 
-        if (mysqli_num_rows($slot_result) > 0) {
-            $slot_row = mysqli_fetch_assoc($slot_result);
-            $slot_id = $slot_row['SlotID'];
+        if ($slot) {
+            $slot_id = $slot['SlotID'];
 
             // Insert the appointment
-            $insert_appointment_query = "INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES ($patient_id, '$date', '$time', '$service', 'Pending', $slot_id)";
-            if (mysqli_query($conn, $insert_appointment_query)) {
+            try {
+                $stmt = $conn->prepare("INSERT INTO Appointments (PatientID, Date, Time, Service, Status, SlotID) VALUES (?, ?, ?, ?, 'Pending', ?)");
+                $stmt->execute([$patient_id, $date, $time, $service, $slot_id]);
                 $message = "Appointment added successfully";
-            } else {
-                $message = "Error: " . mysqli_error($conn);
+            } catch (PDOException $e) {
+                $message = "Error: " . $e->getMessage();
             }
         } else {
             $message = "Slot not found. Please check the date and time.";
@@ -58,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 } else {
     // Retrieve date, time, and service from query parameters for GET request
-    $date = $_GET['date'];
-    $time = $_GET['time'];
+    $date = isset($_GET['date']) ? $_GET['date'] : '';
+    $time = isset($_GET['time']) ? $_GET['time'] : '';
     $service = isset($_GET['service']) ? $_GET['service'] : '';
 }
 ?>

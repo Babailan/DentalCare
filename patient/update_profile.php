@@ -36,10 +36,9 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     die('Please enter a valid email address.');
 }
 
-$query = "UPDATE Patients SET name='$name', ic='$ic', sex='$sex', address='$address', age=$age, mobileNo='$mobile_no', email='$email' WHERE patientID=$patient_id";
-if (mysqli_query($conn, $query)) {
-    header('Location: profile.php');
-} else {
-    echo "Error: " . mysqli_error($conn);
-}
+$stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ?, Email = ? WHERE PatientID = ?");
+$stmt->execute([$name, $ic, $sex, $address, $age, $mobile_no, $email, $patient_id]);
+
+header('Location: profile.php');
+exit;
 ?>

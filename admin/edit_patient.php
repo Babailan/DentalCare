@@ -8,26 +8,29 @@ if (!isset($_SESSION['admin'])) {
     exit;
 }
 
-$patient_id = $_GET['id'];
-$query = "SELECT * FROM Patients WHERE PatientID=$patient_id";
-$result = mysqli_query($conn, $query);
-$patient = mysqli_fetch_assoc($result);
+$patient_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+
+$stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ?");
+$stmt->execute([$patient_id]);
+$patient = $stmt->fetch();
+
+if (!$patient) {
+    die('Patient not found.');
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
     $ic = $_POST['ic'];
     $sex = $_POST['sex'];
     $address = $_POST['address'];
-    $age = $_POST['age'];
+    $age = (int) $_POST['age'];
     $mobile_no = $_POST['mobile_no'];
 
-    $update_query = "UPDATE Patients SET Name='$name', IC='$ic', Sex='$sex', Address='$address', Age=$age, MobileNo='$mobile_no' WHERE PatientID=$patient_id";
-    if (mysqli_query($conn, $update_query)) {
-        header('Location: patient_records.php');
-        exit;
-    } else {
-        echo "Error: " . mysqli_error($conn);
-    }
+    $stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ? WHERE PatientID = ?");
+    $stmt->execute([$name, $ic, $sex, $address, $age, $mobile_no, $patient_id]);
+
+    header('Location: patient_records.php');
+    exit;
 }
 ?>
 

@@ -52,26 +52,24 @@ if ($password !== $confirm_password) {
 }
 
 // Check if username is already taken
-$check_username_query = "SELECT * FROM Patients WHERE username = ?";
-$stmt = $conn->prepare($check_username_query);
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt = $conn->prepare("SELECT COUNT(*) FROM Patients WHERE Username = ?");
+$stmt->execute([$username]);
 
-if ($result->num_rows > 0) {
+if ($stmt->fetchColumn() > 0) {
     // Username already exists
     redirect_with_error('Username is already taken. Please choose a different username.');
 }
 
 $password_hashed = password_hash($password, PASSWORD_BCRYPT);
 
-$query = "INSERT INTO Patients (name, ic, sex, address, age, mobileNo, email, username, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("ssssissss", $name, $ic, $sex, $address, $age, $mobile_no, $email, $username, $password_hashed);
+$query = "INSERT INTO Patients (Name, IC, Sex, Address, Age, MobileNo, Email, Username, Password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-if ($stmt->execute()) {
+try {
+    $stmt = $conn->prepare($query);
+    $stmt->execute([$name, $ic, $sex, $address, $age, $mobile_no, $email, $username, $password_hashed]);
     header('Location: login.php');
-} else {
-    redirect_with_error('Error: ' . mysqli_error($conn));
+    exit;
+} catch (PDOException $e) {
+    redirect_with_error('Error: ' . $e->getMessage());
 }
 ?>

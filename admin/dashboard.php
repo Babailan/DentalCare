@@ -11,19 +11,17 @@ if (!isset($_SESSION['admin'])) {
 
 // Fetch today's appointments
 $todays_date = date('Y-m-d');
-$todays_appointments_query = "SELECT COUNT(*) AS count FROM Appointments WHERE Date = '$todays_date'";
-$todays_appointments_result = mysqli_query($conn, $todays_appointments_query);
-$todays_appointments_count = mysqli_fetch_assoc($todays_appointments_result)['count'];
+$stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE Date = ?");
+$stmt->execute([$todays_date]);
+$todays_appointments_count = $stmt->fetchColumn();
 
 // Fetch today's available slots
-$todays_slots_query = "SELECT COUNT(*) AS count FROM Slots WHERE Date='$todays_date' AND Status='available'";
-$todays_slots_result = mysqli_query($conn, $todays_slots_query);
-$todays_slots_count = mysqli_fetch_assoc($todays_slots_result)['count'];
+$stmt = $conn->prepare("SELECT COUNT(*) FROM Slots WHERE Date = ? AND Status = 'available'");
+$stmt->execute([$todays_date]);
+$todays_slots_count = $stmt->fetchColumn();
 
 // Fetch pending appointments
-$pending_appointments_query = "SELECT COUNT(*) AS count FROM Appointments WHERE Status = 'Pending'";
-$pending_appointments_result = mysqli_query($conn, $pending_appointments_query);
-$pending_appointments_count = mysqli_fetch_assoc($pending_appointments_result)['count'];
+$pending_appointments_count = $conn->query("SELECT COUNT(*) FROM Appointments WHERE Status = 'Pending'")->fetchColumn();
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Admin Dashboard</h2>

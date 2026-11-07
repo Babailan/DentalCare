@@ -1,16 +1,11 @@
 <?php
 include '../public/config.php';
 
-$date = $_GET['date'];
-$query = "SELECT Time, Status FROM Slots WHERE Date='$date'";
-$result = mysqli_query($conn, $query);
-$slots = array();   
+$date = isset($_GET['date']) ? $_GET['date'] : '';
 
-while ($row = mysqli_fetch_assoc($result)) {
-    $slots[] = $row;
-}
+$stmt = $conn->prepare("SELECT Time, Status FROM Slots WHERE Date = ?");
+$stmt->execute([$date]);
+$slots = $stmt->fetchAll();
 
 echo json_encode($slots);
 ?>
-
-

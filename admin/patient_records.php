@@ -5,26 +5,28 @@ include '../public/header.php';
 
 // Handle delete request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_patient_id'])) {
-    $patient_id = $_POST['delete_patient_id'];
-    $delete_query = "DELETE FROM Patients WHERE PatientID = $patient_id";
+    $patient_id = (int) $_POST['delete_patient_id'];
 
-    if (mysqli_query($conn, $delete_query)) {
+    try {
+        $stmt = $conn->prepare("DELETE FROM Patients WHERE PatientID = ?");
+        $stmt->execute([$patient_id]);
         echo "<script>alert('Patient deleted successfully');</script>";
-    } else {
-        echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
+    } catch (PDOException $e) {
+        echo "<script>alert('Error deleting patient: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "');</script>";
     }
 }
 
 // Get sort parameters from URL, default to sorting by PatientID
-$sort_column = isset($_GET['sort']) ? $_GET['sort'] : 'PatientID';
-$sort_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
+$allowed_columns = ['PatientID', 'Name', 'IC', 'Sex', 'Address', 'Age', 'MobileNo'];
+$sort_column = isset($_GET['sort']) && in_array($_GET['sort'], $allowed_columns, true) ? $_GET['sort'] : 'PatientID';
+$sort_order = (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC') ? 'DESC' : 'ASC';
 
 // Toggle sort order
 $new_order = $sort_order === 'ASC' ? 'DESC' : 'ASC';
 
 // Fetch all patients with sorting
 $query = "SELECT * FROM Patients ORDER BY $sort_column $sort_order";
-$result = mysqli_query($conn, $query);
+$result = $conn->query($query);
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Patient Records</h2>
@@ -50,7 +52,7 @@ $result = mysqli_query($conn, $query);
         </thead>
         <tbody>
         <?php
-        while ($row = mysqli_fetch_assoc($result)) {
+        while ($row = $result->fetch()) {
             echo "<tr>";
             echo "<td>" . $row['PatientID'] . "</td>";
             echo "<td>" . htmlspecialchars($row['Name']) . "</td>";

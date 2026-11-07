@@ -12,23 +12,22 @@ if (!isset($_SESSION['admin'])) {
 // Handle status update if form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['appointment_id']) && isset($_POST['status'])) {
-        $appointment_id = $_POST['appointment_id'];
+        $appointment_id = (int) $_POST['appointment_id'];
         $status = $_POST['status'];
 
-        // Update appointment status
-        $query = "UPDATE Appointments SET Status = '$status' WHERE AppointmentID = $appointment_id";
-        if (!mysqli_query($conn, $query)) {
-            echo "Error updating record: " . mysqli_error($conn);
-        } else {
+        if (in_array($status, ['Pending', 'Approved', 'Rejected'], true)) {
+            $stmt = $conn->prepare("UPDATE Appointments SET Status = ? WHERE AppointmentID = ?");
+            $stmt->execute([$status, $appointment_id]);
+
             // If the status is approved, update the corresponding slot status to unavailable
-            if ($status == 'Approved') {
-                $slot_query = "SELECT SlotID FROM Appointments WHERE AppointmentID = $appointment_id";
-                $slot_result = mysqli_query($conn, $slot_query);
-                if ($slot_result && mysqli_num_rows($slot_result) > 0) {
-                    $slot_row = mysqli_fetch_assoc($slot_result);
-                    $slot_id = $slot_row['SlotID'];
-                    $update_slot_query = "UPDATE Slots SET Status = 'unavailable' WHERE SlotID = $slot_id";
-                    mysqli_query($conn, $update_slot_query);
+            if ($status === 'Approved') {
+                $stmt = $conn->prepare("SELECT SlotID FROM Appointments WHERE AppointmentID = ?");
+                $stmt->execute([$appointment_id]);
+                $slot = $stmt->fetch();
+
+                if ($slot && $slot['SlotID'] !== null) {
+                    $stmt = $conn->prepare("UPDATE Slots SET Status = 'unavailable' WHERE SlotID = ?");
+                    $stmt->execute([$slot['SlotID']]);
                 }
             }
         }
@@ -36,18 +35,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Handle appointment deletion
     if (isset($_POST['delete_appointment_id'])) {
-        $appointment_id = $_POST['delete_appointment_id'];
-
-        $delete_query = "DELETE FROM Appointments WHERE AppointmentID = $appointment_id";
-        if (!mysqli_query($conn, $delete_query)) {
-            echo "Error deleting record: " . mysqli_error($conn);
-        }
+        $appointment_id = (int) $_POST['delete_appointment_id'];
+        $stmt = $conn->prepare("DELETE FROM Appointments WHERE AppointmentID = ?");
+        $stmt->execute([$appointment_id]);
     }
 }
 
 // Get sort parameters from URL, default to sorting by AppointmentID
-$sort_column = isset($_GET['sort']) ? $_GET['sort'] : 'AppointmentID';
-$sort_order = isset($_GET['order']) ? $_GET['order'] : 'ASC';
+$allowed_columns = ['AppointmentID', 'PatientName', 'Date', 'Time', 'Service', 'Status'];
+$sort_column = isset($_GET['sort']) && in_array($_GET['sort'], $allowed_columns, true) ? $_GET['sort'] : 'AppointmentID';
+$sort_order = (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC') ? 'DESC' : 'ASC';
 
 // Toggle sort order
 $new_order = $sort_order === 'ASC' ? 'DESC' : 'ASC';
@@ -57,7 +54,7 @@ $query = "SELECT Appointments.AppointmentID, Patients.Name as PatientName, Appoi
           FROM Appointments 
           JOIN Patients ON Appointments.PatientID = Patients.PatientID 
           ORDER BY $sort_column $sort_order";
-$result = mysqli_query($conn, $query);
+$result = $conn->query($query);
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Manage Appointments</h2>
@@ -78,7 +75,7 @@ $result = mysqli_query($conn, $query);
         </thead>
         <tbody>
             <?php
-            while ($row = mysqli_fetch_assoc($result)) {
+            while ($row = $result->fetch()) {
                 $statusBadge = '';
                 if ($row['Status'] == 'Pending') {
                     $statusBadge = '<div class="badge badge-warning">' . htmlspecialchars($row['Status']) . '</div>';
