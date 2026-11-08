@@ -42,6 +42,21 @@ if ($chatReady) {
     }
 }
 
+$getInitial = static function ($name) {
+    $name = trim((string) $name);
+    if ($name === '') {
+        return '?';
+    }
+
+    $initial = function_exists('mb_substr')
+        ? mb_substr($name, 0, 1, 'UTF-8')
+        : substr($name, 0, 1);
+
+    return function_exists('mb_strtoupper')
+        ? mb_strtoupper($initial, 'UTF-8')
+        : strtoupper($initial);
+};
+
 include __DIR__ . '/../header.php';
 ?>
 
@@ -54,19 +69,24 @@ include __DIR__ . '/../header.php';
         <aside class="chat-conversations card card-border bg-base-100">
             <div class="card-body">
             <h3 class="card-title">Patients</h3>
-            <ul class="menu p-0">
+            <ul class="menu p-0 w-full">
                 <?php if (count($conversations) === 0): ?>
                     <li>No patients yet.</li>
                 <?php else: ?>
                     <?php foreach ($conversations as $conversation): ?>
-                        <li>
-                            <a class="<?php echo (int) $conversation['PatientID'] === $selected_patient_id ? 'active' : ''; ?>" href="messages.php?patient_id=<?php echo (int) $conversation['PatientID']; ?>">
-                                <?php echo htmlspecialchars($conversation['Name']); ?>
-                                <?php if ((int) $conversation['UnreadCount'] > 0): ?>
-                                    <strong>(<?php echo (int) $conversation['UnreadCount']; ?> new)</strong>
-                                <?php endif; ?>
-                            </a>
-                            <div class="conversation-preview">
+                        <li class="conversation-item w-full">
+                            <a class="conversation-link w-full <?php echo (int) $conversation['PatientID'] === $selected_patient_id ? 'active' : ''; ?>" href="messages.php?patient_id=<?php echo (int) $conversation['PatientID']; ?>">
+                                <div class="avatar avatar-placeholder conversation-avatar" aria-hidden="true">
+                                    <div class="w-11 rounded-full bg-base-200 text-base-content"><?php echo htmlspecialchars($getInitial($conversation['Name']), ENT_QUOTES, 'UTF-8'); ?></div>
+                                </div>
+                                <span class="conversation-content">
+                                    <span class="conversation-heading">
+                                        <span class="conversation-name"><?php echo htmlspecialchars($conversation['Name']); ?></span>
+                                        <?php if ((int) $conversation['UnreadCount'] > 0): ?>
+                                            <span class="badge badge-primary badge-sm"><?php echo (int) $conversation['UnreadCount']; ?> new</span>
+                                        <?php endif; ?>
+                                    </span>
+                                    <span class="conversation-preview">
                                 <?php
                                 if ($conversation['LastMessage'] !== null) {
                                     $preview = $conversation['LastMessage'];
@@ -80,7 +100,9 @@ include __DIR__ . '/../header.php';
                                     echo 'No messages yet';
                                 }
                                 ?>
-                            </div>
+                                    </span>
+                                </span>
+                            </a>
                         </li>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -96,6 +118,8 @@ include __DIR__ . '/../header.php';
                 <div id="chat-app"
                      data-role="admin"
                      data-patient-id="<?php echo (int) $selected_patient['PatientID']; ?>"
+                     data-patient-initial="<?php echo htmlspecialchars($getInitial($selected_patient['Name']), ENT_QUOTES, 'UTF-8'); ?>"
+                     data-admin-initial="A"
                      data-api="../chat_api.php">
                     <div id="chat-messages" class="chat-history">
                         <p id="chat-empty">No messages yet.</p>

@@ -8,7 +8,7 @@ if (!isset($_SESSION['admin'])) {
 }
 $patient_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-$stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ?");
+$stmt = $conn->prepare("SELECT * FROM Patients WHERE PatientID = ? AND IsDeleted = 0");
 $stmt->execute([$patient_id]);
 $patient = $stmt->fetch();
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($ic !== '' && !preg_match('/^\d{12}$/', $ic)) {
         $error = 'IC must be blank or 12 digits.';
     } else {
-        $stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ? WHERE PatientID = ?");
+        $stmt = $conn->prepare("UPDATE Patients SET Name = ?, IC = ?, Sex = ?, Address = ?, Age = ?, MobileNo = ? WHERE PatientID = ? AND IsDeleted = 0");
         $stmt->execute([$name, $ic === '' ? null : $ic, $sex, $address, $age, $mobile_no, $patient_id]);
 
         header('Location: patient_records.php');

@@ -15,11 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit('Choose a valid date from today onward.');
     }
 
-    // Predefined time slots from 9 AM to 5 PM
-    $timeSlots = [
-        '09:00:00', '10:00:00', '11:00:00', '12:00:00',
-        '13:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00'
-    ];
+    $timeSlots = [];
+    for ($minutes = 9 * 60; $minutes <= 17 * 60; $minutes += 30) {
+        $timeSlots[] = sprintf('%02d:%02d:00', intdiv($minutes, 60), $minutes % 60);
+    }
 
     try {
         $conn->beginTransaction();

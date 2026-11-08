@@ -20,6 +20,16 @@ if ($tableCheck && $tableCheck->fetch()) {
 $stmt = $conn->prepare("SELECT Name FROM Patients WHERE PatientID = ?");
 $stmt->execute([$patient_id]);
 $patient = $stmt->fetch();
+$patientInitial = 'P';
+if ($patient && trim((string) $patient['Name']) !== '') {
+    $patientName = trim((string) $patient['Name']);
+    $patientInitial = function_exists('mb_substr')
+        ? mb_substr($patientName, 0, 1, 'UTF-8')
+        : substr($patientName, 0, 1);
+    $patientInitial = function_exists('mb_strtoupper')
+        ? mb_strtoupper($patientInitial, 'UTF-8')
+        : strtoupper($patientInitial);
+}
 
 include __DIR__ . '/../header.php';
 ?>
@@ -37,6 +47,8 @@ include __DIR__ . '/../header.php';
          class="chat-panel card card-border bg-base-100"
          data-role="patient"
          data-patient-id="<?php echo $patient_id; ?>"
+         data-patient-initial="<?php echo htmlspecialchars($patientInitial, ENT_QUOTES, 'UTF-8'); ?>"
+         data-admin-initial="A"
          data-api="../chat_api.php">
         <div class="card-body">
             <div id="chat-messages" class="chat-history">

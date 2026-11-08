@@ -12,13 +12,14 @@ $messageType = 'error';
 $date = $_POST['date'] ?? $_GET['date'] ?? '';
 $time = $_POST['time'] ?? $_GET['time'] ?? '';
 $serviceId = (int) ($_POST['service_id'] ?? $_GET['service_id'] ?? 0);
+$patientId = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $patientId = filter_var($_POST['patient_id'] ?? null, FILTER_VALIDATE_INT);
     $dateValid = DateTime::createFromFormat('!Y-m-d', $date);
     $timeValid = preg_match('/^\d{2}:\d{2}$/', $time) === 1;
 
-    $patientStmt = $conn->prepare('SELECT PatientID FROM Patients WHERE PatientID = ?');
+    $patientStmt = $conn->prepare('SELECT PatientID FROM Patients WHERE PatientID = ? AND IsDeleted = 0');
     $patientStmt->execute([$patientId]);
     $patient = $patientStmt->fetch();
     $serviceStmt = $conn->prepare('SELECT ServiceID, Name, Price FROM Services WHERE ServiceID = ? AND IsActive = 1');
@@ -57,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$patients = $conn->query('SELECT PatientID, Name, MobileNo FROM Patients ORDER BY Name ASC')->fetchAll();
+$patients = $conn->query('SELECT PatientID, Name, MobileNo FROM Patients WHERE IsDeleted = 0 ORDER BY Name ASC')->fetchAll();
 $services = $conn->query('SELECT ServiceID, Name, Price FROM Services WHERE IsActive = 1 ORDER BY Name ASC')->fetchAll();
 include __DIR__ . '/../header.php';
 ?>
@@ -74,7 +75,7 @@ include __DIR__ . '/../header.php';
                 <select class="select w-full" name="patient_id" required>
                     <option value="">Select a patient</option>
                     <?php foreach ($patients as $patient): ?>
-                        <option value="<?php echo (int) $patient['PatientID']; ?>"><?php echo htmlspecialchars($patient['Name'] . ' (' . $patient['MobileNo'] . ')'); ?></option>
+                        <option value="<?php echo (int) $patient['PatientID']; ?>" <?php echo (int) $patient['PatientID'] === $patientId ? 'selected' : ''; ?>><?php echo htmlspecialchars($patient['Name'] . ' (' . $patient['MobileNo'] . ')'); ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>

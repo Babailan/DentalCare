@@ -362,10 +362,50 @@ body.app-shell {
     white-space: normal;
 }
 
+.chat-conversations .menu li > a.conversation-link {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .7rem;
+}
+
+.chat-conversations .menu li > a.conversation-link.active {
+    background: var(--clinic-paper);
+    color: var(--clinic-ink);
+}
+
+.conversation-avatar {
+    flex: 0 0 auto;
+}
+
+.conversation-content {
+    display: block;
+    min-width: 0;
+    flex: 1;
+}
+
+.conversation-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem;
+}
+
+.conversation-name {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .conversation-preview {
-    padding: 0 .75rem .65rem;
+    display: block;
+    overflow: hidden;
+    padding: .2rem 0 0;
     color: var(--clinic-muted);
     font-size: .76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .chat-history {
@@ -382,6 +422,48 @@ body.app-shell {
     border: 1px solid var(--clinic-line) !important;
     border-radius: 6px;
     background: var(--clinic-paper);
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    margin-bottom: 1rem;
+}
+
+.chat-message-own {
+    flex-direction: row-reverse;
+}
+
+.chat-message-avatar {
+    flex: 0 0 auto;
+}
+
+.chat-message-content {
+    max-width: min(78%, 36rem);
+}
+
+.chat-message-meta {
+    margin-bottom: .25rem;
+    color: var(--clinic-muted);
+    font-size: .75rem;
+}
+
+.chat-message-body {
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    background: var(--clinic-paper);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.chat-message-own .chat-message-body {
+    background: var(--clinic-teal);
+    color: #fff;
+}
+
+.chat-message-own .chat-message-meta {
+    text-align: right;
 }
 
 .portal-main #chat-form {

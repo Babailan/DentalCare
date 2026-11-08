@@ -8,8 +8,12 @@ if (!isset($_SESSION['admin'])) {
 }
 
 $error = '';
+$firstName = trim($_POST['first_name'] ?? '');
+$lastName = trim($_POST['last_name'] ?? '');
+$middleName = trim($_POST['middle_name'] ?? '');
+$suffix = trim($_POST['suffix'] ?? '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
+    $name = implode(' ', array_filter([$firstName, $middleName, $lastName, $suffix], static fn ($part) => $part !== ''));
     $ic = trim($_POST['ic'] ?? '');
     $sex = $_POST['sex'] ?? '';
     $address = trim($_POST['address'] ?? '');
@@ -19,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if ($name === '' || $address === '' || $username === '' || !in_array($sex, ['Male', 'Female'], true)
+    if ($firstName === '' || $lastName === '' || $address === '' || $username === '' || !in_array($sex, ['Male', 'Female'], true)
         || ($ic !== '' && !preg_match('/^\d{12}$/', $ic)) || $age === false || $age < 1 || $age > 120
         || !preg_match('/^\d{10,11}$/', $mobile) || !filter_var($email, FILTER_VALIDATE_EMAIL)
         || strlen($password) < 8) {
@@ -51,7 +55,10 @@ include __DIR__ . '/../header.php';
     <?php endif; ?>
     <form method="post" class="card card-border bg-base-100 shadow-sm">
         <div class="card-body grid grid-cols-1 gap-4 md:grid-cols-2">
-            <label><span class="mb-1 block text-sm font-medium">Full name</span><input class="input w-full" name="name" required></label>
+            <label><span class="mb-1 block text-sm font-medium">First name</span><input class="input w-full" name="first_name" value="<?php echo htmlspecialchars($firstName); ?>" required></label>
+            <label><span class="mb-1 block text-sm font-medium">Last name</span><input class="input w-full" name="last_name" value="<?php echo htmlspecialchars($lastName); ?>" required></label>
+            <label><span class="mb-1 block text-sm font-medium">Middle name</span><input class="input w-full" name="middle_name" value="<?php echo htmlspecialchars($middleName); ?>"></label>
+            <label><span class="mb-1 block text-sm font-medium">Suffix (optional)</span><input class="input w-full" name="suffix" value="<?php echo htmlspecialchars($suffix); ?>"></label>
             <label><span class="mb-1 block text-sm font-medium">IC (optional, 12 digits)</span><input class="input w-full" name="ic" inputmode="numeric" pattern="\d{12}"></label>
             <label><span class="mb-1 block text-sm font-medium">Sex</span><select class="select w-full" name="sex" required><option value="">Select</option><option>Male</option><option>Female</option></select></label>
             <label><span class="mb-1 block text-sm font-medium">Age</span><input class="input w-full" type="number" name="age" min="1" max="120" required></label>

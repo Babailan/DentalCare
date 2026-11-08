@@ -166,13 +166,44 @@ document.addEventListener("DOMContentLoaded", function () {
     let fetchUrl = isAdmin
       ? `../patient/load_slots.php?date=${formattedDate}`
       : `load_slots.php?date=${formattedDate}`;
-    Promise.all([
-      fetch(fetchUrl).then((response) => {
+    const slotsRequest = fetch(fetchUrl)
+      .then((response) => {
         if (!response.ok) throw new Error("Could not load available times.");
         return response.json();
-      }),
-      servicesRequest,
-    ])
+      })
+      .then((slots) => {
+        if (!isAdmin || formattedDate < todayISO || slots.length === 0) {
+          return slots;
+        }
+
+        const availableTimes = new Set(slots.map((slot) => slot.Time.slice(0, 5)));
+        const hasMissingTimes = Array.from({ length: 17 }, (_, index) => {
+          const minutes = 9 * 60 + index * 30;
+          return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+        }).some((time) => !availableTimes.has(time));
+
+        if (!hasMissingTimes) return slots;
+
+        return fetch("generate_slots.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({ date: formattedDate }),
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error("Could not generate the missing appointment times.");
+          }
+          return fetch(fetchUrl).then((slotsResponse) => {
+            if (!slotsResponse.ok) {
+              throw new Error("Could not reload appointment times.");
+            }
+            return slotsResponse.json();
+          });
+        });
+      });
+
+    Promise.all([slotsRequest, servicesRequest])
       .then(([slots, services]) => {
         slotsDiv.innerHTML = "";
         let hasAvailableSlots = false;
@@ -200,28 +231,55 @@ document.addEventListener("DOMContentLoaded", function () {
             timeText.textContent = slot.Time.slice(0, 5);
 
             const isAvailable = slot.Status === "available";
+            const isBlocked = Number(slot.IsBlocked) === 1;
 
             const statusBadge = document.createElement("div");
             statusBadge.className = isAvailable
               ? "badge badge-success"
               : "badge badge-neutral";
-            statusBadge.textContent = isAvailable
-              ? "Available"
-              : slot.Status.charAt(0).toUpperCase() + slot.Status.slice(1);
+            statusBadge.textContent = isAdmin
+              ? (isBlocked ? "Blocked by clinic" : isAvailable ? "Available" : "Booked")
+              : isAvailable ? "Available" : "Unavailable";
 
             slotInfo.appendChild(timeText);
             slotInfo.appendChild(statusBadge);
+            if (isAdmin && slot.BookedBy) {
+              const bookedByText = document.createElement("div");
+              bookedByText.className = "text-sm text-base-content/70";
+              bookedByText.textContent = `Booked by: ${slot.BookedBy}`;
+              slotInfo.appendChild(bookedByText);
+            }
+            if (isAdmin && slot.PendingRequests) {
+              const pendingText = document.createElement("div");
+              pendingText.className = "text-sm text-base-content/70";
+              pendingText.textContent = `Pending requests: ${slot.PendingRequests}`;
+              slotInfo.appendChild(pendingText);
+            }
             cardBody.appendChild(slotInfo);
+
+            if (isAdmin && (isAvailable || isBlocked)) {
+              const availabilityButton = document.createElement("button");
+              availabilityButton.type = "button";
+              availabilityButton.className = "btn btn-sm btn-outline";
+              availabilityButton.textContent = isBlocked
+                ? "Make available"
+                : "Make unavailable";
+              availabilityButton.addEventListener("click", () =>
+                changeSlotAvailability(slot.SlotID, isBlocked ? "unblock" : "block", date),
+              );
+              cardBody.appendChild(availabilityButton);
+            }
 
             if (isAvailable) {
               hasAvailableSlots = true;
 
               if (services.length > 0) {
                 const cardActions = document.createElement("div");
-                cardActions.className = "card-actions";
+                cardActions.className = "card-actions flex flex-wrap";
 
                 const serviceDropdown = document.createElement("select");
                 serviceDropdown.className = "select select-sm";
+                serviceDropdown.setAttribute("aria-label", "Appointment type");
                 const placeholder = document.createElement("option");
                 placeholder.value = "";
                 placeholder.textContent = "Select appointment type";
@@ -233,11 +291,91 @@ document.addEventListener("DOMContentLoaded", function () {
                   serviceDropdown.appendChild(option);
                 });
 
+                let selectedPatientId = "";
+                if (isAdmin) {
+                  const patientPicker = document.createElement("div");
+                  patientPicker.className = "relative min-w-56 flex-1";
+
+                  const patientSearch = document.createElement("input");
+                  patientSearch.type = "search";
+                  patientSearch.className = "input input-sm w-full";
+                  patientSearch.placeholder = "Search patient by name or phone";
+                  patientSearch.setAttribute("aria-label", "Search patient by name or phone");
+                  patientSearch.setAttribute("aria-autocomplete", "list");
+                  patientSearch.setAttribute("aria-expanded", "false");
+
+                  const patientResults = document.createElement("div");
+                  patientResults.className =
+                    "absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-box border border-base-300 bg-base-100 p-1 shadow-lg";
+                  patientResults.setAttribute("role", "listbox");
+                  patientResults.hidden = true;
+
+                  patientSearch.addEventListener("input", () => {
+                    selectedPatientId = "";
+                    patientResults.replaceChildren();
+                    const query = patientSearch.value.trim().toLocaleLowerCase();
+                    patientResults.hidden = query.length === 0;
+                    patientSearch.setAttribute("aria-expanded", String(!patientResults.hidden));
+                    if (patientResults.hidden) return;
+
+                    const matches = adminPatients.filter((patient) =>
+                      `${patient.Name} ${patient.MobileNo || ""}`
+                        .toLocaleLowerCase()
+                        .includes(query),
+                    );
+                    if (matches.length === 0) {
+                      const noResults = document.createElement("p");
+                      noResults.className = "p-2 text-sm";
+                      noResults.textContent = "No matching patients.";
+                      patientResults.appendChild(noResults);
+                      return;
+                    }
+
+                    matches.forEach((patient) => {
+                      const result = document.createElement("button");
+                      result.type = "button";
+                      result.className = "btn btn-ghost btn-sm w-full justify-start";
+                      result.setAttribute("role", "option");
+                      result.textContent = `${patient.Name} (${patient.MobileNo || "No phone"})`;
+                      result.addEventListener("click", () => {
+                        selectedPatientId = patient.PatientID;
+                        patientSearch.value = result.textContent;
+                        patientResults.hidden = true;
+                        patientSearch.setAttribute("aria-expanded", "false");
+                      });
+                      patientResults.appendChild(result);
+                    });
+                  });
+
+                  patientSearch.addEventListener("keydown", (event) => {
+                    if (event.key === "ArrowDown" && !patientResults.hidden) {
+                      const firstResult = patientResults.querySelector("button");
+                      if (firstResult) {
+                        event.preventDefault();
+                        firstResult.focus();
+                      }
+                    } else if (event.key === "Escape") {
+                      patientResults.hidden = true;
+                      patientSearch.setAttribute("aria-expanded", "false");
+                    }
+                  });
+
+                  patientPicker.appendChild(patientSearch);
+                  patientPicker.appendChild(patientResults);
+                  cardActions.appendChild(patientPicker);
+                }
+
                 const bookButton = document.createElement("button");
+                bookButton.type = "button";
                 bookButton.className = "btn btn-primary btn-sm";
-                bookButton.textContent = "Book";
+                bookButton.textContent = isAdmin ? "Book for patient" : "Book";
                 bookButton.addEventListener("click", () =>
-                  bookSlot(date, slot.Time, serviceDropdown.value),
+                  bookSlot(
+                    date,
+                    slot.Time,
+                    serviceDropdown.value,
+                    selectedPatientId,
+                  ),
                 );
 
                 cardActions.appendChild(serviceDropdown);
@@ -264,7 +402,7 @@ document.addEventListener("DOMContentLoaded", function () {
           slotsDiv.appendChild(noSlotsAlert);
         }
 
-        if (!hasAvailableSlots && generateSlotsButton) {
+        if (slots.length === 0 && generateSlotsButton) {
           generateSlotsButton.style.display = "inline-flex";
         } else if (generateSlotsButton) {
           generateSlotsButton.style.display = "none";
@@ -279,8 +417,30 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
+  function changeSlotAvailability(slotId, action, date) {
+    fetch("manage_slot.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        slot_id: slotId,
+        action,
+      }),
+    })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || "Could not update this slot.");
+        }
+        showToast(result.message, "success");
+        loadSlots(date);
+      })
+      .catch((error) => showToast(error.message, "error"));
+  }
+
   // Function to book a slot
-  function bookSlot(date, time, serviceId) {
+  function bookSlot(date, time, serviceId, patientId) {
     const formattedDate = date.toISOString().split("T")[0];
     // if user is patient
     if (!isAdmin) {
@@ -312,12 +472,29 @@ document.addEventListener("DOMContentLoaded", function () {
         showToast("Please select an appointment type.", "error");
         return;
       }
-      const params = new URLSearchParams({
+      if (!patientId) {
+        showToast("Please select a patient.", "error");
+        return;
+      }
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "add_appointment.php";
+      const fields = {
         date: formattedDate,
-        time,
+        time: time.slice(0, 5),
         service_id: serviceId,
+        patient_id: patientId,
+      };
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
       });
-      window.location.href = `add_appointment.php?${params}`;
+      document.body.appendChild(form);
+      form.submit();
     }
   }
 

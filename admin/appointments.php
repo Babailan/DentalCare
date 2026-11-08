@@ -16,31 +16,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = $_POST['status'];
 
         if (in_array($status, ['Pending', 'Approved', 'Rejected'], true)) {
-            $stmt = $conn->prepare('SELECT SlotID FROM Appointments WHERE AppointmentID = ?');
+            $stmt = $conn->prepare('SELECT SlotID, Status FROM Appointments WHERE AppointmentID = ?');
             $stmt->execute([$appointment_id]);
             $appointment = $stmt->fetch();
             if ($appointment) {
                 $conn->beginTransaction();
-                if (in_array($status, ['Pending', 'Approved'], true) && $appointment['SlotID'] !== null) {
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND AppointmentID != ? AND Status IN ('Pending', 'Approved')");
+                if ($status === 'Approved' && $appointment['SlotID'] !== null) {
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND AppointmentID != ? AND Status = 'Approved'");
                     $stmt->execute([$appointment['SlotID'], $appointment_id]);
                     if ((int) $stmt->fetchColumn() > 0) {
                         $conn->rollBack();
                         $statusError = true;
                     } else {
-                        $stmt = $conn->prepare("UPDATE Slots SET Status = 'unavailable' WHERE SlotID = ?");
+                        $stmt = $conn->prepare('SELECT Status, IsBlocked FROM Slots WHERE SlotID = ?');
                         $stmt->execute([$appointment['SlotID']]);
+                        $slot = $stmt->fetch();
+                        if (!$slot || (int) $slot['IsBlocked'] === 1
+                            || ($slot['Status'] !== 'available' && $appointment['Status'] !== 'Approved')) {
+                            $conn->rollBack();
+                            $statusError = true;
+                        } elseif ($appointment['Status'] !== 'Approved') {
+                            $stmt = $conn->prepare("UPDATE Slots SET Status = 'unavailable' WHERE SlotID = ? AND Status = 'available' AND IsBlocked = 0");
+                            $stmt->execute([$appointment['SlotID']]);
+                            if ($stmt->rowCount() !== 1) {
+                                $conn->rollBack();
+                                $statusError = true;
+                            }
+                        }
                     }
                 }
                 if (!$statusError) {
                     $stmt = $conn->prepare('UPDATE Appointments SET Status = ? WHERE AppointmentID = ?');
                     $stmt->execute([$status, $appointment_id]);
                 }
-                if (!$statusError && $status === 'Rejected' && $appointment['SlotID'] !== null) {
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND AppointmentID != ? AND Status IN ('Pending', 'Approved')");
-                    $stmt->execute([$appointment['SlotID'], $appointment_id]);
+                if (!$statusError && $status !== 'Approved' && $appointment['SlotID'] !== null) {
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND Status = 'Approved'");
+                    $stmt->execute([$appointment['SlotID']]);
                     if ((int) $stmt->fetchColumn() === 0) {
-                        $stmt = $conn->prepare("UPDATE Slots SET Status = 'available' WHERE SlotID = ?");
+                        $stmt = $conn->prepare("UPDATE Slots SET Status = CASE WHEN IsBlocked = 1 THEN 'unavailable' ELSE 'available' END WHERE SlotID = ?");
                         $stmt->execute([$appointment['SlotID']]);
                     }
                 }
@@ -62,10 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare('DELETE FROM Appointments WHERE AppointmentID = ?');
             $stmt->execute([$appointment_id]);
             if ($appointment && $appointment['SlotID'] !== null) {
-                $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND Status IN ('Pending', 'Approved')");
+                $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND Status = 'Approved'");
                 $stmt->execute([$appointment['SlotID']]);
                 if ((int) $stmt->fetchColumn() === 0) {
-                    $stmt = $conn->prepare("UPDATE Slots SET Status = 'available' WHERE SlotID = ?");
+                    $stmt = $conn->prepare("UPDATE Slots SET Status = CASE WHEN IsBlocked = 1 THEN 'unavailable' ELSE 'available' END WHERE SlotID = ?");
                     $stmt->execute([$appointment['SlotID']]);
                 }
             }

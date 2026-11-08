@@ -7,9 +7,9 @@
             <h1 class="card-title text-3xl">Contact the clinic</h1>
             <p>For appointment questions, sign in to your patient account and message the doctor. Patient accounts are created by the clinic doctor.</p>
             <div class="mt-4">
-                <p><strong>Telephone:</strong> +60 3 1234 5678</p>
-                <p><strong>Email:</strong> dentalclinic666@gmail.com</p>
-                <p><strong>Address:</strong> 123 Jalan Durian, Taman Clinic, 81200 Johor Bahru, Johor</p>
+                <p><strong>Telephone:</strong> +63 966 792 7736</p>
+                <p><strong>Email:</strong> ciat.dentalclinic@gmail.com</p>
+                <p><strong>Address:</strong> Blk 1 Lot 14, Tierra Nova Main, Bagumbong Rd, Caloocan, 1421 Metro Manila</p>
             </div>
             <div class="card-actions mt-4">
                 <a class="btn btn-primary" href="login.php">Patient sign in</a>

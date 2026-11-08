@@ -2,13 +2,23 @@
 session_start();
 include 'config.php';
 
-$username = isset($_POST['username']) ? $_POST['username'] : '';
-$password = isset($_POST['password']) ? $_POST['password'] : '';
+$usernameInput = $_POST['username'] ?? null;
+$password = $_POST['password'] ?? null;
 
-// Function to redirect with an error message
-function redirect_with_error($message) {
-    header("Location: login.php?error=" . urlencode($message));
+function redirect_with_error($message, $username = '') {
+    $_SESSION['login_error'] = $message;
+    $_SESSION['login_username'] = $username;
+    header('Location: login.php');
     exit();
+}
+
+if (!is_string($usernameInput) || !is_string($password)) {
+    redirect_with_error('Please enter a valid username and password.');
+}
+
+$username = trim($usernameInput);
+if ($username === '' || $password === '') {
+    redirect_with_error('Please enter your username and password.', $username);
 }
 
 // Check if user is admin
@@ -24,11 +34,11 @@ if ($admin) {
         header('Location: ../admin/dashboard.php');
         exit;
     }
-    redirect_with_error('Invalid credentials. Please try again.');
+    redirect_with_error('Invalid credentials. Please try again.', $username);
 }
 
 // Check if user is patient
-$stmt = $conn->prepare("SELECT * FROM Patients WHERE Username = ?");
+$stmt = $conn->prepare("SELECT * FROM Patients WHERE Username = ? AND IsDeleted = 0");
 $stmt->execute([$username]);
 $patient = $stmt->fetch();
 
@@ -38,9 +48,9 @@ if ($patient) {
         header('Location: ../patient/home.php');
         exit;
     }
-    redirect_with_error('Invalid credentials. Please try again.');
+    redirect_with_error('Invalid credentials. Please try again.', $username);
 }
 
 // Invalid login
-redirect_with_error('Invalid credentials. Please try again.');
+redirect_with_error('Invalid credentials. Please try again.', $username);
 ?>

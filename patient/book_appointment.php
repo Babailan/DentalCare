@@ -35,7 +35,7 @@ if (!$service) {
 
 try {
     $conn->beginTransaction();
-    $slotStmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time LIKE ? AND Status = 'available' LIMIT 1");
+    $slotStmt = $conn->prepare("SELECT SlotID FROM Slots WHERE Date = ? AND Time LIKE ? AND Status = 'available' AND IsBlocked = 0 LIMIT 1");
     $slotStmt->execute([$date, $time . '%']);
     $slot = $slotStmt->fetch();
     if (!$slot) {
@@ -43,11 +43,11 @@ try {
         booking_response(409, ['error' => 'That appointment time is no longer available.']);
     }
 
-    $reserve = $conn->prepare("UPDATE Slots SET Status = 'unavailable' WHERE SlotID = ? AND Status = 'available'");
-    $reserve->execute([$slot['SlotID']]);
-    if ($reserve->rowCount() !== 1) {
+    $duplicateStmt = $conn->prepare("SELECT 1 FROM Appointments WHERE PatientID = ? AND SlotID = ? AND Status = 'Pending' LIMIT 1");
+    $duplicateStmt->execute([(int) $_SESSION['patient'], $slot['SlotID']]);
+    if ($duplicateStmt->fetchColumn()) {
         $conn->rollBack();
-        booking_response(409, ['error' => 'That appointment time was just booked. Please choose another slot.']);
+        booking_response(409, ['error' => 'You already have a pending request for this appointment time.']);
     }
 
     $appointment = $conn->prepare("INSERT INTO Appointments (PatientID, Date, Time, Service, ServiceID, Price, Status, SlotID) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)");

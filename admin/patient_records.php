@@ -6,36 +6,34 @@ if (!isset($_SESSION['admin'])) {
     header('Location: ../login.php');
     exit;
 }
-include __DIR__ . '/../header.php';
 
-// Handle delete request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_patient_id'])) {
-    $patient_id = (int) $_POST['delete_patient_id'];
-
-    try {
-        $conn->beginTransaction();
-        $stmt = $conn->prepare('SELECT SlotID FROM Appointments WHERE PatientID = ? AND SlotID IS NOT NULL');
-        $stmt->execute([$patient_id]);
-        $slotIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        $stmt = $conn->prepare("DELETE FROM Patients WHERE PatientID = ?");
-        $stmt->execute([$patient_id]);
-        foreach (array_unique($slotIds) as $slotId) {
-            $stmt = $conn->prepare("SELECT COUNT(*) FROM Appointments WHERE SlotID = ? AND Status IN ('Pending', 'Approved')");
-            $stmt->execute([$slotId]);
-            if ((int) $stmt->fetchColumn() === 0) {
-                $stmt = $conn->prepare("UPDATE Slots SET Status = 'available' WHERE SlotID = ?");
-                $stmt->execute([$slotId]);
-            }
-        }
-        $conn->commit();
-        echo "<script>alert('Patient deleted successfully');</script>";
-    } catch (PDOException $e) {
-        if ($conn->inTransaction()) {
-            $conn->rollBack();
-        }
-        echo "<script>alert('Error deleting patient: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "');</script>";
-    }
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_patient_id'])) {
+    $patient_id = filter_var($_POST['delete_patient_id'], FILTER_VALIDATE_INT);
+    try {
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!is_string($csrfToken) || !hash_equals($_SESSION['csrf_token'], $csrfToken) || !$patient_id) {
+            $_SESSION['patient_records_notice'] = ['error', 'Invalid request. Please try again.'];
+        } else {
+            $stmt = $conn->prepare('UPDATE Patients SET IsDeleted = 1, DeletedAt = CURRENT_TIMESTAMP WHERE PatientID = ? AND IsDeleted = 0');
+            $stmt->execute([$patient_id]);
+            $_SESSION['patient_records_notice'] = $stmt->rowCount() === 1
+                ? ['success', 'Patient moved to deleted records. You can restore the account at any time.']
+                : ['error', 'Patient not found or already deleted.'];
+        }
+    } catch (PDOException $e) {
+        error_log('Could not soft-delete patient: ' . $e->getMessage());
+        $_SESSION['patient_records_notice'] = ['error', 'Could not move the patient to deleted records.'];
+    }
+    header('Location: patient_records.php');
+    exit;
+}
+
+$notice = $_SESSION['patient_records_notice'] ?? null;
+unset($_SESSION['patient_records_notice']);
 
 // Get sort parameters from URL, default to sorting by PatientID
 $allowed_columns = ['PatientID', 'Name', 'IC', 'Sex', 'Address', 'Age', 'MobileNo'];
@@ -45,13 +43,20 @@ $sort_order = (isset($_GET['order']) && strtoupper($_GET['order']) === 'DESC') ?
 // Toggle sort order
 $new_order = $sort_order === 'ASC' ? 'DESC' : 'ASC';
 
-// Fetch all patients with sorting
-$query = "SELECT * FROM Patients ORDER BY $sort_column $sort_order";
+// Deleted patient records are managed on the recovery page.
+$query = "SELECT * FROM Patients WHERE IsDeleted = 0 ORDER BY $sort_column $sort_order";
 $result = $conn->query($query);
+include __DIR__ . '/../header.php';
 ?>
 
 <h2 class="text-3xl font-bold text-center mb-8">Patient Records</h2>
-<div class="mb-4 w-full max-w-2xl"><a class="btn btn-primary" href="add_patient.php">Create patient account</a></div>
+<?php if ($notice): ?>
+    <div class="alert alert-<?php echo htmlspecialchars($notice[0]); ?> mb-4" role="status"><?php echo htmlspecialchars($notice[1]); ?></div>
+<?php endif; ?>
+<div class="mb-4 flex flex-wrap gap-3">
+    <a class="btn btn-primary" href="add_patient.php">Create patient account</a>
+    <a class="btn" href="deleted_patients.php">View deleted patients</a>
+</div>
 
 <div class="mb-4 w-full max-w-2xl">
     <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Search for names, IC, etc.." title="Type in a name or IC" class="input w-full">
@@ -69,7 +74,7 @@ $result = $conn->query($query);
                 <th><a href="?sort=Age&order=<?php echo $new_order; ?>" class="link link-hover">Age</a></th>
                 <th><a href="?sort=MobileNo&order=<?php echo $new_order; ?>" class="link link-hover">Mobile No</a></th>
                 <th>Edit</th>
-                <th>Delete</th>
+                <th>Remove</th>
             </tr>
         </thead>
         <tbody>
@@ -90,9 +95,10 @@ $result = $conn->query($query);
                     </form>
                   </td>";
             echo "<td>
-                    <form action='' method='post' onsubmit='return confirm(\"Are you sure you want to delete this patient? All data regarding this patient will be deleted permanently\");'>
+                    <form action='patient_records.php' method='post' onsubmit='return confirm(\"Move this patient to deleted records? You can restore them later.\");'>
                         <input type='hidden' name='delete_patient_id' value='" . $row['PatientID'] . "'>
-                        <button type='submit' class='btn btn-error btn-sm'>Delete</button>
+                        <input type='hidden' name='csrf_token' value='" . htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES) . "'>
+                        <button type='submit' class='btn btn-warning btn-sm'>Soft delete</button>
                     </form>
                   </td>";
             echo "</tr>";

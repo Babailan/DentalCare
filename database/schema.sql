@@ -11,14 +11,17 @@ CREATE TABLE IF NOT EXISTS Patients (
     MobileNo TEXT,
     Email TEXT,
     Username TEXT UNIQUE,
-    Password TEXT
+    Password TEXT,
+    IsDeleted INTEGER NOT NULL DEFAULT 0 CHECK (IsDeleted IN (0, 1)),
+    DeletedAt TEXT
 );
 
 CREATE TABLE IF NOT EXISTS Slots (
     SlotID INTEGER PRIMARY KEY AUTOINCREMENT,
     Date TEXT,
     Time TEXT,
-    Status TEXT CHECK (Status IN ('available', 'unavailable'))
+    Status TEXT CHECK (Status IN ('available', 'unavailable')),
+    IsBlocked INTEGER NOT NULL DEFAULT 0 CHECK (IsBlocked IN (0, 1))
 );
 
 CREATE TABLE IF NOT EXISTS Services (

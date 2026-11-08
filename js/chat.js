@@ -37,7 +37,24 @@
 
         var wrapper = document.createElement('div');
         wrapper.className = 'chat-message chat-message-' + msg.sender;
+        if ((isAdmin && msg.sender === 'admin') || (!isAdmin && msg.sender === 'patient')) {
+            wrapper.className += ' chat-message-own';
+        }
         wrapper.setAttribute('data-id', String(msg.id));
+
+        var avatar = document.createElement('div');
+        avatar.className = 'avatar avatar-placeholder chat-message-avatar';
+        avatar.setAttribute('aria-hidden', 'true');
+
+        var avatarCircle = document.createElement('div');
+        avatarCircle.className = 'w-10 rounded-full bg-base-200 text-base-content';
+        avatarCircle.textContent = msg.sender === 'patient'
+            ? (root.getAttribute('data-patient-initial') || 'P')
+            : (root.getAttribute('data-admin-initial') || 'A');
+        avatar.appendChild(avatarCircle);
+
+        var content = document.createElement('div');
+        content.className = 'chat-message-content';
 
         var meta = document.createElement('div');
         meta.className = 'chat-message-meta';
@@ -47,8 +64,10 @@
         body.className = 'chat-message-body';
         body.textContent = msg.message;
 
-        wrapper.appendChild(meta);
-        wrapper.appendChild(body);
+        content.appendChild(meta);
+        content.appendChild(body);
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(content);
         messagesEl.appendChild(wrapper);
     }
 
